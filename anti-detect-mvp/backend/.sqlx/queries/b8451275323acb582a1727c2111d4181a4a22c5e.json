@@ -1,0 +1,72 @@
+{
+  "db": "PostgreSQL",
+  "query": "INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3) RETURNING *",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Uuid"
+      },
+      {
+        "name": "email",
+        "ordinal": 1,
+        "type_info": "Varchar"
+      },
+      {
+        "name": "password_hash",
+        "ordinal": 2,
+        "type_info": "Varchar"
+      },
+      {
+        "name": "role",
+        "ordinal": 3,
+        "type_info": "Varchar"
+      },
+      {
+        "name": "license_key",
+        "ordinal": 4,
+        "type_info": "Varchar"
+      },
+      {
+        "name": "hardware_id",
+        "ordinal": 5,
+        "type_info": "Varchar"
+      },
+      {
+        "name": "subscription_tier",
+        "ordinal": 6,
+        "type_info": "Varchar"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 7,
+        "type_info": "Timestamptz"
+      },
+      {
+        "name": "updated_at",
+        "ordinal": 8,
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b8451275323acb582a1727c2111d4181a4a22c5e"
+}
