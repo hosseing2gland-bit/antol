@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
@@ -8,12 +8,12 @@ pub struct User {
     pub email: String,
     #[serde(skip_serializing)]
     pub password_hash: String,
-    pub role: String,
+    pub role: Option<String>,
     pub license_key: Option<String>,
     pub hardware_id: Option<String>,
-    pub subscription_tier: String,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub subscription_tier: Option<String>,
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
 }
 
 #[derive(Deserialize)]
