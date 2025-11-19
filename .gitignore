@@ -1,0 +1,23 @@
+# Rust
+**/target/
+**/*.rs.bk
+**/.sqlx/
+
+# Node
+**/node_modules/
+**/dist/
+**/.next/
+**/build/
+
+# IDE
+**/.vscode/
+**/.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
