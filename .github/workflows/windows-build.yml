@@ -1,0 +1,82 @@
+name: Build Windows installers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-admin:
+    name: Build admin-app (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'   # یا نسخه مناسب پروژه
+
+      - name: Setup Rust
+        uses: dtolnay/gh-action-rust@stable
+        with:
+          components: rustfmt
+      - name: Add MSVC target
+        run: rustup target add x86_64-pc-windows-msvc
+
+      - name: Install dependencies (admin-app)
+        working-directory: admin-app
+        run: npm ci
+
+      - name: Build web assets (admin-app)
+        working-directory: admin-app
+        run: npm run build
+
+      - name: Tauri build (admin-app)
+        working-directory: admin-app
+        run: npm run tauri build -- --target x86_64-pc-windows-msvc
+
+      - name: Upload admin artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-windows-artifacts
+          path: admin-app/src-tauri/target/release/bundle/**
+
+  build-client:
+    name: Build client-app (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Rust
+        uses: dtolnay/gh-action-rust@stable
+        with:
+          components: rustfmt
+      - name: Add MSVC target
+        run: rustup target add x86_64-pc-windows-msvc
+
+      - name: Install dependencies (client-app)
+        working-directory: client-app
+        run: npm ci
+
+      - name: Build web assets (client-app)
+        working-directory: client-app
+        run: npm run build
+
+      - name: Tauri build (client-app)
+        working-directory: client-app
+        run: npm run tauri build -- --target x86_64-pc-windows-msvc
+
+      - name: Upload client artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-windows-artifacts
+          path: client-app/src-tauri/target/release/bundle/**
