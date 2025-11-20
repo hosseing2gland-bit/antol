@@ -27,10 +27,16 @@ jobs:
 
       - name: Install dependencies (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
-        run: npm ci
+        run: |
+          npm ci
+          npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
+      - name: Build web assets
+        working-directory: ./anti-detect-mvp/admin-app
+        run: npm run build
+
         run: npm run tauri build -- --target x86_64-apple-darwin
 
       - name: Upload admin artifacts
@@ -61,10 +67,16 @@ jobs:
 
       - name: Install dependencies (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
-        run: npm ci
+        run: |
+          npm ci
+          npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
+      - name: Build web assets
+        working-directory: ./anti-detect-mvp/admin-app
+        run: npm run build
+
         run: npm run tauri build -- --target aarch64-apple-darwin
 
       - name: Upload admin artifacts
@@ -95,10 +107,16 @@ jobs:
 
       - name: Install dependencies (client-app)
         working-directory: ./anti-detect-mvp/client-app
-        run: npm ci
+        run: |
+          npm ci
+          npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (client-app)
         working-directory: ./anti-detect-mvp/client-app
+      - name: Build web assets
+        working-directory: ./anti-detect-mvp/admin-app
+        run: npm run build
+
         run: npm run tauri build -- --target x86_64-apple-darwin
 
       - name: Upload client artifacts
@@ -129,10 +147,16 @@ jobs:
 
       - name: Install dependencies (client-app)
         working-directory: ./anti-detect-mvp/client-app
-        run: npm ci
+        run: |
+          npm ci
+          npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (client-app)
         working-directory: ./anti-detect-mvp/client-app
+      - name: Build web assets
+        working-directory: ./anti-detect-mvp/admin-app
+        run: npm run build
+
         run: npm run tauri build -- --target aarch64-apple-darwin
 
       - name: Upload client artifacts
