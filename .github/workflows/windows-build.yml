@@ -25,23 +25,23 @@ jobs:
           toolchain: stable
           target: x86_64-pc-windows-msvc
 
+      - name: Install Tauri prerequisites
+        run: |
+          echo "Installing WebView2..."
+          
       - name: Install dependencies (admin-app)
-        working-directory: anti-detect-mvp/admin-app
+        working-directory: ./anti-detect-mvp/admin-app
         run: npm ci
 
-      - name: Build web assets (admin-app)
-        working-directory: anti-detect-mvp/admin-app
-        run: npm run build
-
-      - name: Tauri build (admin-app)
-        working-directory: anti-detect-mvp/admin-app
+      - name: Build Tauri app (admin-app)
+        working-directory: ./anti-detect-mvp/admin-app
         run: npm run tauri build
 
       - name: Upload admin artifacts
         uses: actions/upload-artifact@v4
         with:
           name: admin-windows-artifacts
-          path: anti-detect-mvp/admin-app/src-tauri/target/release/bundle/**
+          path: ./anti-detect-mvp/admin-app/src-tauri/target/release/bundle/**
 
   build-client:
     name: Build client-app (Windows)
@@ -61,20 +61,20 @@ jobs:
           toolchain: stable
           target: x86_64-pc-windows-msvc
 
+      - name: Install Tauri prerequisites
+        run: |
+          echo "Installing WebView2..."
+
       - name: Install dependencies (client-app)
-        working-directory: anti-detect-mvp/client-app
+        working-directory: ./anti-detect-mvp/client-app
         run: npm ci
 
-      - name: Build web assets (client-app)
-        working-directory: anti-detect-mvp/client-app
-        run: npm run build
-
-      - name: Tauri build (client-app)
-        working-directory: anti-detect-mvp/client-app
+      - name: Build Tauri app (client-app)
+        working-directory: ./anti-detect-mvp/client-app
         run: npm run tauri build
 
       - name: Upload client artifacts
         uses: actions/upload-artifact@v4
         with:
           name: client-windows-artifacts
-          path: anti-detect-mvp/client-app/src-tauri/target/release/bundle/**
+          path: ./anti-detect-mvp/client-app/src-tauri/target/release/bundle/**
