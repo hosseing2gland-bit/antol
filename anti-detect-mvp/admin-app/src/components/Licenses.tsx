@@ -5,7 +5,10 @@ import { useLicensesStore } from '../store';
 export default function Licenses() {
   const { licenses, fetchLicenses, createLicense, revokeLicense } = useLicensesStore();
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    plan: 'trial' | 'basic' | 'pro' | 'enterprise';
+    max_profiles: number;
+  }>({
     plan: 'basic',
     max_profiles: 3,
   });
@@ -60,7 +63,7 @@ export default function Licenses() {
               {licenses.map(license => (
                 <tr key={license.id}>
                   <td>
-                    <code className="license-key">{license.license_key}</code>
+                    <code className="license-key">{license.key}</code>
                   </td>
                   <td><span className="badge badge-primary">{license.plan}</span></td>
                   <td>{license.max_profiles}</td>
@@ -96,7 +99,7 @@ export default function Licenses() {
                 <label>Plan</label>
                 <select
                   value={formData.plan}
-                  onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, plan: e.target.value as 'trial' | 'basic' | 'pro' | 'enterprise' })}
                 >
                   <option value="trial">Trial (7 days, 1 profile)</option>
                   <option value="basic">Basic (30 days, 3 profiles)</option>

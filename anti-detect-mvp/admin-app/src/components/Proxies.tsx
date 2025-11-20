@@ -22,8 +22,7 @@ export default function Proxies() {
                 <th>Type</th>
                 <th>Host</th>
                 <th>Port</th>
-                <th>Country</th>
-                <th>Created</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -32,7 +31,6 @@ export default function Proxies() {
                   <td><span className="badge badge-info">{proxy.proxy_type}</span></td>
                   <td>{proxy.host}</td>
                   <td>{proxy.port}</td>
-                  <td>{proxy.country || 'N/A'}</td>
                   <td>{new Date(proxy.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}

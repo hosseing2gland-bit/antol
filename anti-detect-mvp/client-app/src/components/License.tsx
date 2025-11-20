@@ -59,7 +59,7 @@ export default function License() {
             <div className="license-info">
               <div className="info-item">
                 <label>License Key</label>
-                <p><code className="license-key">{license.license_key}</code></p>
+                <p><code className="license-key">{license.key}</code></p>
               </div>
 
               <div className="info-item">

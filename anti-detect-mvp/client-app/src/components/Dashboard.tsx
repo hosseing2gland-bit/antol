@@ -119,7 +119,7 @@ export default function Dashboard() {
                   <tr key={profile.id}>
                     <td>{profile.name}</td>
                     <td><small>{profile.user_agent.substring(0, 40)}...</small></td>
-                    <td>{profile.screen_resolution}</td>
+                    <td>{profile.locale}</td>
                     <td>{new Date(profile.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}

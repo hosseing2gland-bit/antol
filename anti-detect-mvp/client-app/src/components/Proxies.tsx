@@ -7,12 +7,12 @@ export default function Proxies() {
   const [showModal, setShowModal] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [formData, setFormData] = useState({
+    name: '',
     proxy_type: 'http',
     host: '',
     port: 8080,
     username: '',
     password: '',
-    country: '',
   });
 
   useEffect(() => {
@@ -36,12 +36,12 @@ export default function Proxies() {
 
   const resetForm = () => {
     setFormData({
+      name: '',
       proxy_type: 'http',
       host: '',
       port: 8080,
       username: '',
       password: '',
-      country: '',
     });
   };
 
@@ -82,7 +82,6 @@ export default function Proxies() {
                 <th>Type</th>
                 <th>Host</th>
                 <th>Port</th>
-                <th>Country</th>
                 <th>Created</th>
                 <th>Actions</th>
               </tr>
@@ -93,7 +92,6 @@ export default function Proxies() {
                   <td><span className="badge badge-info">{proxy.proxy_type}</span></td>
                   <td>{proxy.host}</td>
                   <td>{proxy.port}</td>
-                  <td>{proxy.country || 'N/A'}</td>
                   <td>{new Date(proxy.created_at).toLocaleDateString()}</td>
                   <td className="actions">
                     <button 
@@ -169,16 +167,6 @@ export default function Proxies() {
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Country (Optional)</label>
-                <input
-                  type="text"
-                  value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  placeholder="US, UK, etc."
                 />
               </div>
 

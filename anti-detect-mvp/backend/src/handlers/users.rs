@@ -41,17 +41,18 @@ pub async fn create_user(
     let hashed_password = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let role = req.role.unwrap_or(crate::models::UserRole::User);
+    
     let user = sqlx::query_as::<_, User>(
         r#"
         INSERT INTO users (email, password_hash, role, is_active)
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, $2, $3, true)
         RETURNING *
         "#
     )
     .bind(&req.email)
     .bind(&hashed_password)
-    .bind(&req.role)
-    .bind(req.is_active.unwrap_or(true))
+    .bind(&role)
     .fetch_one(&pool)
     .await
     .map_err(|e| {

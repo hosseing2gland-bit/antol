@@ -37,52 +37,45 @@ pub async fn create_profile(
     State(pool): State<PgPool>,
     Json(req): Json<CreateProfileRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    // Check user's license limit
-    let license = sqlx::query_as::<_, (i32,)>(
-        "SELECT max_profiles FROM licenses WHERE user_id = $1 AND is_active = true AND expires_at > NOW()"
-    )
-    .bind(&req.user_id)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-    .ok_or((StatusCode::FORBIDDEN, "No active license found".to_string()))?;
-
-    let current_count = sqlx::query_as::<_, (i64,)>(
-        "SELECT COUNT(*) FROM profiles WHERE user_id = $1"
-    )
-    .bind(&req.user_id)
-    .fetch_one(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-    .0;
-
-    if current_count >= license.0 as i64 {
-        return Err((StatusCode::FORBIDDEN, "Profile limit reached".to_string()));
-    }
+    // Generate default values based on what's provided
+    let user_agent = req.user_agent.unwrap_or_else(|| "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36".to_string());
+    let timezone = req.timezone.unwrap_or_else(|| "America/New_York".to_string());
+    let locale = req.locale.unwrap_or_else(|| "en-US".to_string());
+    let canvas_noise = req.canvas_noise.unwrap_or(true);
+    let webgl_noise = req.webgl_noise.unwrap_or(true);
+    let audio_noise = req.audio_noise.unwrap_or(true);
+    
+    // Generate random fingerprint
+    let fingerprint = serde_json::json!({
+        "canvas": canvas_noise,
+        "webgl": webgl_noise,
+        "audio": audio_noise
+    });
 
     let profile = sqlx::query_as::<_, Profile>(
         r#"
         INSERT INTO profiles (
-            user_id, name, user_agent, screen_resolution, timezone,
-            language, webgl_vendor, webgl_renderer, canvas_noise,
-            audio_noise, fonts, proxy_id
+            user_id, name, fingerprint, proxy_id, user_agent, timezone,
+            locale, webgl_vendor, webgl_renderer, canvas_noise,
+            webgl_noise, audio_noise, is_active
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES (
+            '00000000-0000-0000-0000-000000000000'::uuid, $1, $2, $3, $4, $5,
+            $6, 'Intel Inc.', 'Intel Iris OpenGL Engine', $7,
+            $8, $9, true
+        )
         RETURNING *
         "#
     )
-    .bind(&req.user_id)
     .bind(&req.name)
-    .bind(&req.user_agent)
-    .bind(&req.screen_resolution)
-    .bind(&req.timezone)
-    .bind(&req.language)
-    .bind(&req.webgl_vendor)
-    .bind(&req.webgl_renderer)
-    .bind(req.canvas_noise.unwrap_or(true))
-    .bind(req.audio_noise.unwrap_or(true))
-    .bind(&req.fonts)
+    .bind(&fingerprint)
     .bind(&req.proxy_id)
+    .bind(&user_agent)
+    .bind(&timezone)
+    .bind(&locale)
+    .bind(canvas_noise)
+    .bind(webgl_noise)
+    .bind(audio_noise)
     .fetch_one(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -103,24 +96,24 @@ pub async fn update_profile(
         updates.push(format!("name = ${}", param_count));
         param_count += 1;
     }
-    if let Some(user_agent) = &req.user_agent {
-        updates.push(format!("user_agent = ${}", param_count));
-        param_count += 1;
-    }
-    if let Some(screen_resolution) = &req.screen_resolution {
-        updates.push(format!("screen_resolution = ${}", param_count));
-        param_count += 1;
-    }
-    if let Some(timezone) = &req.timezone {
-        updates.push(format!("timezone = ${}", param_count));
-        param_count += 1;
-    }
-    if let Some(language) = &req.language {
-        updates.push(format!("language = ${}", param_count));
-        param_count += 1;
-    }
     if let Some(proxy_id) = &req.proxy_id {
         updates.push(format!("proxy_id = ${}", param_count));
+        param_count += 1;
+    }
+    if let Some(is_active) = req.is_active {
+        updates.push(format!("is_active = ${}", param_count));
+        param_count += 1;
+    }
+    if let Some(canvas_noise) = req.canvas_noise {
+        updates.push(format!("canvas_noise = ${}", param_count));
+        param_count += 1;
+    }
+    if let Some(webgl_noise) = req.webgl_noise {
+        updates.push(format!("webgl_noise = ${}", param_count));
+        param_count += 1;
+    }
+    if let Some(audio_noise) = req.audio_noise {
+        updates.push(format!("audio_noise = ${}", param_count));
         param_count += 1;
     }
 
@@ -136,20 +129,20 @@ pub async fn update_profile(
     if let Some(name) = &req.name {
         sql_query = sql_query.bind(name);
     }
-    if let Some(user_agent) = &req.user_agent {
-        sql_query = sql_query.bind(user_agent);
-    }
-    if let Some(screen_resolution) = &req.screen_resolution {
-        sql_query = sql_query.bind(screen_resolution);
-    }
-    if let Some(timezone) = &req.timezone {
-        sql_query = sql_query.bind(timezone);
-    }
-    if let Some(language) = &req.language {
-        sql_query = sql_query.bind(language);
-    }
     if let Some(proxy_id) = &req.proxy_id {
         sql_query = sql_query.bind(proxy_id);
+    }
+    if let Some(is_active) = req.is_active {
+        sql_query = sql_query.bind(is_active);
+    }
+    if let Some(canvas_noise) = req.canvas_noise {
+        sql_query = sql_query.bind(canvas_noise);
+    }
+    if let Some(webgl_noise) = req.webgl_noise {
+        sql_query = sql_query.bind(webgl_noise);
+    }
+    if let Some(audio_noise) = req.audio_noise {
+        sql_query = sql_query.bind(audio_noise);
     }
     sql_query = sql_query.bind(id);
 

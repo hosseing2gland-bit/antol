@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Play, Edit, Trash2, UserCircle } from 'lucide-react';
+import { Plus, Play, Trash2, UserCircle } from 'lucide-react';
 import { useProfilesStore, useProxiesStore } from '../store';
 
 export default function Profiles() {
@@ -9,14 +9,13 @@ export default function Profiles() {
   const [formData, setFormData] = useState({
     name: '',
     user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    screen_resolution: '1920x1080',
+    locale: 'en-US',
     timezone: 'America/New_York',
-    language: 'en-US',
     webgl_vendor: 'Intel Inc.',
     webgl_renderer: 'Intel Iris OpenGL Engine',
     canvas_noise: true,
     audio_noise: true,
-    fonts: [] as string[],
+    webgl_noise: true,
     proxy_id: '',
   });
 
@@ -44,14 +43,13 @@ export default function Profiles() {
     setFormData({
       name: '',
       user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      screen_resolution: '1920x1080',
+      locale: 'en-US',
       timezone: 'America/New_York',
-      language: 'en-US',
       webgl_vendor: 'Intel Inc.',
       webgl_renderer: 'Intel Iris OpenGL Engine',
       canvas_noise: true,
       audio_noise: true,
-      fonts: [],
+      webgl_noise: true,
       proxy_id: '',
     });
   };
@@ -114,15 +112,15 @@ export default function Profiles() {
                 </div>
 
                 <div className="form-group">
-                  <label>Screen Resolution</label>
+                  <label>Locale</label>
                   <select
-                    value={formData.screen_resolution}
-                    onChange={(e) => setFormData({ ...formData, screen_resolution: e.target.value })}
+                    value={formData.locale}
+                    onChange={(e) => setFormData({ ...formData, locale: e.target.value })}
                   >
-                    <option value="1920x1080">1920x1080</option>
-                    <option value="1366x768">1366x768</option>
-                    <option value="1440x900">1440x900</option>
-                    <option value="2560x1440">2560x1440</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
                   </select>
                 </div>
 
@@ -140,19 +138,6 @@ export default function Profiles() {
                 </div>
 
                 <div className="form-group">
-                  <label>Language</label>
-                  <select
-                    value={formData.language}
-                    onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  >
-                    <option value="en-US">English (US)</option>
-                    <option value="en-GB">English (UK)</option>
-                    <option value="es-ES">Spanish</option>
-                    <option value="fr-FR">French</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
                   <label>Proxy</label>
                   <select
                     value={formData.proxy_id}
@@ -161,7 +146,7 @@ export default function Profiles() {
                     <option value="">No Proxy</option>
                     {proxies.map(proxy => (
                       <option key={proxy.id} value={proxy.id}>
-                        {proxy.host}:{proxy.port} ({proxy.country || 'Unknown'})
+                        {proxy.name} ({proxy.host}:{proxy.port})
                       </option>
                     ))}
                   </select>
@@ -221,7 +206,7 @@ export default function Profiles() {
             <div className="profile-header">
               <div>
                 <div className="profile-name">{profile.name}</div>
-                <div className="profile-info">{profile.screen_resolution}</div>
+                <div className="profile-info">{profile.locale}</div>
               </div>
               <div className="profile-actions">
                 <button className="btn-icon" onClick={() => handleLaunch(profile)}>
@@ -237,7 +222,7 @@ export default function Profiles() {
               <strong>Timezone:</strong> {profile.timezone}
             </div>
             <div className="profile-info">
-              <strong>Language:</strong> {profile.language}
+              <strong>Locale:</strong> {profile.locale}
             </div>
             <div className="profile-info">
               <strong>Protection:</strong>{' '}
@@ -265,15 +250,15 @@ export default function Profiles() {
               </div>
 
               <div className="form-group">
-                <label>Screen Resolution</label>
+                <label>Locale</label>
                 <select
-                  value={formData.screen_resolution}
-                  onChange={(e) => setFormData({ ...formData, screen_resolution: e.target.value })}
+                  value={formData.locale}
+                  onChange={(e) => setFormData({ ...formData, locale: e.target.value })}
                 >
-                  <option value="1920x1080">1920x1080</option>
-                  <option value="1366x768">1366x768</option>
-                  <option value="1440x900">1440x900</option>
-                  <option value="2560x1440">2560x1440</option>
+                  <option value="en-US">English (US)</option>
+                  <option value="en-GB">English (UK)</option>
+                  <option value="es-ES">Spanish</option>
+                  <option value="fr-FR">French</option>
                 </select>
               </div>
 

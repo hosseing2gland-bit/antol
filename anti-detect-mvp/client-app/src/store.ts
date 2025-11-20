@@ -21,18 +21,19 @@ interface Profile {
   id: string;
   user_id: string;
   name: string;
-  user_agent: string;
-  screen_resolution: string;
-  timezone: string;
-  language: string;
-  webgl_vendor?: string;
-  webgl_renderer?: string;
-  canvas_noise: boolean;
-  audio_noise: boolean;
-  fonts?: string[];
+  fingerprint: any;
   proxy_id?: string;
+  user_agent: string;
+  timezone: string;
+  locale: string;
+  webgl_vendor: string;
+  webgl_renderer: string;
+  canvas_noise: boolean;
+  webgl_noise: boolean;
+  audio_noise: boolean;
+  is_active: boolean;
   created_at: string;
-  updated_at: string;
+  last_used_at?: string;
 }
 
 interface ProfilesStore {
@@ -46,14 +47,15 @@ interface ProfilesStore {
 interface Proxy {
   id: string;
   user_id: string;
-  proxy_type: string;
+  name: string;
+  proxy_type: 'http' | 'https' | 'socks5';
   host: string;
   port: number;
   username?: string;
   password?: string;
-  country?: string;
+  is_active: boolean;
+  last_checked_at?: string;
   created_at: string;
-  updated_at: string;
 }
 
 interface ProxiesStore {
@@ -67,15 +69,14 @@ interface ProxiesStore {
 
 interface License {
   id: string;
-  license_key: string;
-  plan: string;
-  max_profiles: number;
+  key: string;
   user_id?: string;
-  is_active: boolean;
+  plan: 'trial' | 'basic' | 'pro' | 'enterprise';
+  max_profiles: number;
   expires_at: string;
-  activated_at?: string;
+  is_active: boolean;
   created_at: string;
-  updated_at: string;
+  activated_at?: string;
 }
 
 interface LicenseStore {

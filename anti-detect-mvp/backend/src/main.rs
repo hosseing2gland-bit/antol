@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post, put, delete},
+    routing::{get, post},
     Router,
 };
 use sqlx::postgres::PgPoolOptions;
@@ -22,10 +22,11 @@ async fn main() {
         .await
         .expect("Failed to connect to Postgres");
 
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
+    // Skip migrations if tables already exist (for demo)
+    // sqlx::migrate!("./migrations")
+    //     .run(&pool)
+    //     .await
+    //     .expect("Failed to run migrations");
 
     let app = Router::new()
         .route("/", get(|| async { "Anti-Detect Browser Backend API" }))
@@ -64,8 +65,11 @@ async fn main() {
     println!("✅ Server running on http://{}", addr);
     println!("📚 API Documentation: http://{}/api", addr);
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .expect("Failed to bind to address");
+    
+    axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
 }

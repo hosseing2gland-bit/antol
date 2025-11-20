@@ -6,7 +6,12 @@ export default function Users() {
   const { users, fetchUsers, createUser, updateUser, deleteUser } = useUsersStore();
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    email: string;
+    password: string;
+    role: 'admin' | 'user';
+    is_active: boolean;
+  }>({
     email: '',
     password: '',
     role: 'user',
@@ -145,7 +150,7 @@ export default function Users() {
                 <label>Role</label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
                 >
                   <option value="user">User</option>
                   <option value="admin">Admin</option>

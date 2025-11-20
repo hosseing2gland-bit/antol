@@ -14,10 +14,13 @@ interface User {
 interface License {
   id: string;
   key: string;
-  user_id: string;
+  user_id?: string;
+  plan: 'trial' | 'basic' | 'pro' | 'enterprise';
+  max_profiles: number;
   expires_at: string;
   is_active: boolean;
-  max_profiles: number;
+  created_at: string;
+  activated_at?: string;
 }
 
 interface Profile {
@@ -26,20 +29,31 @@ interface Profile {
   name: string;
   fingerprint: any;
   proxy_id?: string;
+  user_agent: string;
+  timezone: string;
+  locale: string;
+  webgl_vendor: string;
+  webgl_renderer: string;
+  canvas_noise: boolean;
+  webgl_noise: boolean;
+  audio_noise: boolean;
+  is_active: boolean;
   created_at: string;
-  last_used?: string;
+  last_used_at?: string;
 }
 
 interface Proxy {
   id: string;
   user_id: string;
   name: string;
-  type: 'http' | 'socks5';
+  proxy_type: 'http' | 'https' | 'socks5';
   host: string;
   port: number;
   username?: string;
   password?: string;
   is_active: boolean;
+  last_checked_at?: string;
+  created_at: string;
 }
 
 interface AuthState {
