@@ -33,6 +33,10 @@
 # macOS
 brew install postgresql rust node
 
+# Linux (Ubuntu/Debian)
+sudo apt update
+sudo apt install postgresql postgresql-contrib build-essential curl
+
 # یا با Docker
 docker-compose up -d postgres
 ```
