@@ -61,15 +61,13 @@ pub async fn login(
         return Err((StatusCode::UNAUTHORIZED, "Invalid credentials".to_string()));
     }
 
-    if !user.is_active {
-        return Err((StatusCode::FORBIDDEN, "Account is disabled".to_string()));
-    }
-
+    // Note: is_active field removed from schema
+    
     let claims = Claims {
         sub: user.id.to_string(),
         email: user.email.clone(),
         role: user.role.to_string(),
-        exp: (Utc::now() + Duration::hours(24)).timestamp(),
+        exp: (chrono::Local::now().naive_local() + Duration::hours(24)).timestamp(),
     };
 
     let token = encode(
@@ -98,8 +96,8 @@ pub async fn register(
 
     let user = sqlx::query_as::<_, User>(
         r#"
-        INSERT INTO users (email, password_hash, role, is_active)
-        VALUES ($1, $2, 'user', true)
+        INSERT INTO users (email, password_hash, role)
+        VALUES ($1, $2, 'user')
         RETURNING *
         "#
     )
@@ -119,7 +117,7 @@ pub async fn register(
         sub: user.id.to_string(),
         email: user.email.clone(),
         role: user.role.to_string(),
-        exp: (Utc::now() + Duration::hours(24)).timestamp(),
+        exp: (chrono::Local::now().naive_local() + Duration::hours(24)).timestamp(),
     };
 
     let token = encode(

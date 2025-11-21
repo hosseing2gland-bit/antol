@@ -45,14 +45,14 @@ pub async fn create_user(
     
     let user = sqlx::query_as::<_, User>(
         r#"
-        INSERT INTO users (email, password_hash, role, is_active)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO users (email, password_hash, role)
+        VALUES ($1, $2, $3)
         RETURNING *
         "#
     )
     .bind(&req.email)
     .bind(&hashed_password)
-    .bind(&role)
+    .bind(&role.to_string())
     .fetch_one(&pool)
     .await
     .map_err(|e| {
@@ -83,10 +83,7 @@ pub async fn update_user(
         updates.push(format!("role = ${}", param_count));
         param_count += 1;
     }
-    if let Some(is_active) = req.is_active {
-        updates.push(format!("is_active = ${}", param_count));
-        param_count += 1;
-    }
+    // Note: is_active field removed from schema
 
     if updates.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "No fields to update".to_string()));
@@ -101,10 +98,8 @@ pub async fn update_user(
         sql_query = sql_query.bind(email);
     }
     if let Some(role) = &req.role {
-        sql_query = sql_query.bind(role);
-    }
-    if let Some(is_active) = req.is_active {
-        sql_query = sql_query.bind(is_active);
+        let role_str = role.to_string();
+        sql_query = sql_query.bind(role_str);
     }
     sql_query = sql_query.bind(id);
 

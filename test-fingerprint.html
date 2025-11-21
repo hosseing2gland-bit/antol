@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fingerprint Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-result {
+            background: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .label {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .value {
+            color: #fff;
+        }
+        .protected {
+            color: #4CAF50;
+        }
+        .warning {
+            color: #ff9800;
+        }
+        canvas {
+            border: 2px solid #4CAF50;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Anti-Detection Fingerprint Test</h1>
+    
+    <div class="test-section">
+        <h2>Platform & Browser</h2>
+        <div class="test-result">
+            <span class="label">Platform:</span> <span class="value" id="platform"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">User Agent:</span> <span class="value" id="userAgent"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Vendor:</span> <span class="value" id="vendor"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Hardware</h2>
+        <div class="test-result">
+            <span class="label">CPU Cores:</span> <span class="value" id="cores"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Device Memory:</span> <span class="value" id="memory"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Max Touch Points:</span> <span class="value" id="touchPoints"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Screen</h2>
+        <div class="test-result">
+            <span class="label">Resolution:</span> <span class="value" id="screenRes"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Available:</span> <span class="value" id="availRes"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Color Depth:</span> <span class="value" id="colorDepth"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Geolocation</h2>
+        <div class="test-result">
+            <span class="label">Timezone:</span> <span class="value" id="timezone"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Timezone Offset:</span> <span class="value" id="timezoneOffset"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Language:</span> <span class="value" id="language"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Languages:</span> <span class="value" id="languages"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>WebGL</h2>
+        <div class="test-result">
+            <span class="label">Vendor:</span> <span class="value" id="webglVendor"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Renderer:</span> <span class="value" id="webglRenderer"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Canvas Fingerprint</h2>
+        <canvas id="canvas" width="200" height="50"></canvas>
+        <div class="test-result">
+            <span class="label">Canvas Hash:</span> <span class="value" id="canvasHash"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Media Devices</h2>
+        <div id="mediaDevices"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Privacy Features</h2>
+        <div class="test-result">
+            <span class="label">WebRTC Available:</span> <span class="value" id="webrtc"></span>
+        </div>
+        <div class="test-result">
+            <span class="label">Do Not Track:</span> <span class="value" id="dnt"></span>
+        </div>
+    </div>
+
+    <script>
+        // Platform & Browser
+        document.getElementById('platform').textContent = navigator.platform;
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('vendor').textContent = navigator.vendor;
+
+        // Hardware
+        document.getElementById('cores').textContent = navigator.hardwareConcurrency || 'N/A';
+        document.getElementById('memory').textContent = (navigator.deviceMemory || 'N/A') + ' GB';
+        document.getElementById('touchPoints').textContent = navigator.maxTouchPoints;
+
+        // Screen
+        document.getElementById('screenRes').textContent = `${screen.width} × ${screen.height}`;
+        document.getElementById('availRes').textContent = `${screen.availWidth} × ${screen.availHeight}`;
+        document.getElementById('colorDepth').textContent = `${screen.colorDepth} bit`;
+
+        // Geolocation
+        document.getElementById('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        document.getElementById('timezoneOffset').textContent = new Date().getTimezoneOffset() + ' minutes';
+        document.getElementById('language').textContent = navigator.language;
+        document.getElementById('languages').textContent = navigator.languages.join(', ');
+
+        // WebGL
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (gl) {
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            if (debugInfo) {
+                document.getElementById('webglVendor').textContent = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                document.getElementById('webglRenderer').textContent = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            } else {
+                document.getElementById('webglVendor').textContent = 'Extension not available';
+                document.getElementById('webglRenderer').textContent = 'Extension not available';
+            }
+        }
+
+        // Canvas Fingerprint
+        const canvasEl = document.getElementById('canvas');
+        const ctx = canvasEl.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = '#069';
+        ctx.fillText('Canvas Test 🎨', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.fillText('Canvas Test 🎨', 4, 17);
+
+        const canvasData = canvasEl.toDataURL();
+        let hash = 0;
+        for (let i = 0; i < canvasData.length; i++) {
+            hash = ((hash << 5) - hash) + canvasData.charCodeAt(i);
+            hash = hash & hash;
+        }
+        document.getElementById('canvasHash').textContent = hash.toString(16);
+
+        // Media Devices
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            navigator.mediaDevices.enumerateDevices().then(devices => {
+                const container = document.getElementById('mediaDevices');
+                devices.forEach(device => {
+                    const div = document.createElement('div');
+                    div.className = 'test-result';
+                    div.innerHTML = `<span class="label">${device.kind}:</span> <span class="value">${device.label || 'No label'} (${device.deviceId.substring(0, 20)}...)</span>`;
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        // Privacy Features
+        const hasWebRTC = !!(window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection);
+        document.getElementById('webrtc').innerHTML = hasWebRTC ? '<span class="warning">Available</span>' : '<span class="protected">Blocked ✓</span>';
+        document.getElementById('dnt').textContent = navigator.doNotTrack || 'Not set';
+    </script>
+</body>
+</html>

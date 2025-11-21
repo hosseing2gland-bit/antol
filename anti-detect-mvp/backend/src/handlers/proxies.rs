@@ -40,16 +40,16 @@ pub async fn create_proxy(
     let proxy = sqlx::query_as::<_, Proxy>(
         r#"
         INSERT INTO proxies (
-            user_id, name, proxy_type, host, port, username, password, is_active
+            user_id, name, protocol, host, port, username, password
         )
         VALUES (
-            '00000000-0000-0000-0000-000000000000'::uuid, $1, $2, $3, $4, $5, $6, true
+            '00000000-0000-0000-0000-000000000000'::uuid, $1, $2, $3, $4, $5, $6
         )
         RETURNING *
         "#
     )
     .bind(&req.name)
-    .bind(&req.proxy_type)
+    .bind(&req.proxy_type.to_string())
     .bind(&req.host)
     .bind(req.port)
     .bind(&req.username)
@@ -74,10 +74,6 @@ pub async fn update_proxy(
         updates.push(format!("name = ${}", param_count));
         param_count += 1;
     }
-    if let Some(is_active) = req.is_active {
-        updates.push(format!("is_active = ${}", param_count));
-        param_count += 1;
-    }
     if let Some(username) = &req.username {
         updates.push(format!("username = ${}", param_count));
         param_count += 1;
@@ -98,9 +94,6 @@ pub async fn update_proxy(
     
     if let Some(name) = &req.name {
         sql_query = sql_query.bind(name);
-    }
-    if let Some(is_active) = req.is_active {
-        sql_query = sql_query.bind(is_active);
     }
     if let Some(username) = &req.username {
         sql_query = sql_query.bind(username);

@@ -49,24 +49,29 @@ pub async fn create_license(
 
     // Calculate expiry based on plan
     let expires_at = match req.plan {
-        LicensePlan::Trial => Utc::now() + Duration::days(7),
-        LicensePlan::Basic => Utc::now() + Duration::days(30),
-        LicensePlan::Pro => Utc::now() + Duration::days(90),
-        LicensePlan::Enterprise => Utc::now() + Duration::days(365),
+        LicensePlan::Trial => chrono::Local::now().naive_local() + Duration::days(7),
+        LicensePlan::Basic => chrono::Local::now().naive_local() + Duration::days(30),
+        LicensePlan::Pro => chrono::Local::now().naive_local() + Duration::days(90),
+        LicensePlan::Enterprise => chrono::Local::now().naive_local() + Duration::days(365),
     };
+
+    // Create features JSON based on plan
+    let features = serde_json::json!({
+        "plan": format!("{:?}", req.plan).to_lowercase(),
+        "max_profiles": req.max_profiles
+    });
 
     let license = sqlx::query_as::<_, License>(
         r#"
-        INSERT INTO licenses (license_key, plan, max_profiles, expires_at, is_active)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO licenses (license_key, max_profiles, features, expires_at)
+        VALUES ($1, $2, $3, $4)
         RETURNING *
         "#
     )
     .bind(&license_key)
-    .bind(&req.plan)
     .bind(req.max_profiles)
+    .bind(&features)
     .bind(expires_at)
-    .bind(true)
     .fetch_one(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -89,29 +94,28 @@ pub async fn activate_license(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
     .ok_or((StatusCode::NOT_FOUND, "License not found".to_string()))?;
 
-    if !license.is_active {
-        return Err((StatusCode::BAD_REQUEST, "License is not active".to_string()));
-    }
-
-    if license.user_id.is_some() {
+    if license.hardware_id.is_some() {
         return Err((StatusCode::CONFLICT, "License already activated".to_string()));
     }
 
-    if license.expires_at < Utc::now() {
-        return Err((StatusCode::BAD_REQUEST, "License has expired".to_string()));
+    if let Some(expires_at) = license.expires_at {
+        if expires_at < chrono::Local::now().naive_local() {
+            return Err((StatusCode::BAD_REQUEST, "License has expired".to_string()));
+        }
     }
 
     // Activate license
+    let hardware_id = user_id.to_string(); // Convert user_id to hardware_id
     let updated_license = sqlx::query_as::<_, License>(
         r#"
         UPDATE licenses 
-        SET user_id = $1, activated_at = $2
+        SET hardware_id = $1, activated_at = $2
         WHERE license_key = $3
         RETURNING *
         "#
     )
-    .bind(user_id)
-    .bind(Utc::now())
+    .bind(&hardware_id)
+    .bind(chrono::Local::now().naive_local())
     .bind(&license_key)
     .fetch_one(&pool)
     .await
@@ -125,7 +129,7 @@ pub async fn revoke_license(
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let license = sqlx::query_as::<_, License>(
-        "UPDATE licenses SET is_active = false WHERE id = $1 RETURNING *"
+        "UPDATE licenses SET user_id = NULL, hardware_id = NULL WHERE id = $1 RETURNING *"
     )
     .bind(id)
     .fetch_optional(&pool)

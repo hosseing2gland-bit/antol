@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Plus, Play, Trash2, UserCircle } from 'lucide-react';
+import { Plus, Play, Trash2, UserCircle, Square } from 'lucide-react';
 import { useProfilesStore, useProxiesStore } from '../store';
+import { generateFingerprint, launchBrowser, stopBrowser, getActiveBrowsers, type FingerprintConfig } from '../lib/tauri';
 
 export default function Profiles() {
   const { profiles, fetchProfiles, createProfile, deleteProfile } = useProfilesStore();
   const { proxies, fetchProxies } = useProxiesStore();
   const [showModal, setShowModal] = useState(false);
+  const [activeBrowsers, setActiveBrowsers] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -22,7 +24,21 @@ export default function Profiles() {
   useEffect(() => {
     fetchProfiles();
     fetchProxies();
+    loadActiveBrowsers();
+    
+    // Poll active browsers every 5 seconds
+    const interval = setInterval(loadActiveBrowsers, 5000);
+    return () => clearInterval(interval);
   }, []);
+  
+  const loadActiveBrowsers = async () => {
+    try {
+      const active = await getActiveBrowsers();
+      setActiveBrowsers(active);
+    } catch (error) {
+      console.error('Failed to load active browsers:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +77,52 @@ export default function Profiles() {
     }
   };
 
-  const handleLaunch = (profile: any) => {
-    alert(`Launching browser with profile: ${profile.name}\n\nThis will open a new browser window with anti-detection features enabled.`);
+  const handleLaunch = async (profile: any) => {
+    try {
+      // Get fingerprint from profile or generate new one
+      let fp: FingerprintConfig;
+      
+      if (profile.fingerprint && typeof profile.fingerprint === 'object') {
+        fp = profile.fingerprint as FingerprintConfig;
+      } else {
+        fp = await generateFingerprint();
+      }
+      
+      // Get proxy if configured
+      const proxy = profile.proxy_id 
+        ? proxies.find(p => p.id === profile.proxy_id)
+        : null;
+      
+      const proxyConfig = proxy ? {
+        protocol: proxy.proxy_type,
+        host: proxy.host,
+        port: proxy.port,
+        username: proxy.username || undefined,
+        password: proxy.password || undefined,
+      } : undefined;
+      
+      await launchBrowser(profile.id, profile.name, fp, proxyConfig);
+      
+      // Reload active browsers
+      await loadActiveBrowsers();
+    } catch (error) {
+      console.error('Failed to launch browser:', error);
+      alert('Failed to launch browser: ' + error);
+    }
+  };
+  
+  const handleStop = async (profileId: string) => {
+    try {
+      await stopBrowser(profileId);
+      await loadActiveBrowsers();
+    } catch (error) {
+      console.error('Failed to stop browser:', error);
+      alert('Failed to stop browser: ' + error);
+    }
+  };
+  
+  const isBrowserActive = (profileId: string) => {
+    return activeBrowsers.includes(profileId);
   };
 
   if (profiles.length === 0) {
@@ -209,10 +269,16 @@ export default function Profiles() {
                 <div className="profile-info">{profile.locale}</div>
               </div>
               <div className="profile-actions">
-                <button className="btn-icon" onClick={() => handleLaunch(profile)}>
-                  <Play size={16} />
-                </button>
-                <button className="btn-icon" onClick={() => handleDelete(profile.id)}>
+                {isBrowserActive(profile.id) ? (
+                  <button className="btn-icon btn-danger" onClick={() => handleStop(profile.id)} title="Stop Browser">
+                    <Square size={16} />
+                  </button>
+                ) : (
+                  <button className="btn-icon btn-success" onClick={() => handleLaunch(profile)} title="Launch Browser">
+                    <Play size={16} />
+                  </button>
+                )}
+                <button className="btn-icon" onClick={() => handleDelete(profile.id)} title="Delete Profile">
                   <Trash2 size={16} />
                 </button>
               </div>
