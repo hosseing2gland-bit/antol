@@ -31,8 +31,11 @@ jobs:
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
       run: |
+        if (Test-Path package-lock.json) { Remove-Item package-lock.json }
+        if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
         npm install
         npm install @tauri-apps/cli
+        npm install --force @rollup/rollup-win32-x64-msvc
     
     - name: Build Tauri App
       working-directory: anti-detect-mvp/admin-app
@@ -68,8 +71,11 @@ jobs:
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
       run: |
+        if (Test-Path package-lock.json) { Remove-Item package-lock.json }
+        if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
         npm install
         npm install @tauri-apps/cli
+        npm install --force @rollup/rollup-win32-x64-msvc
     
     - name: Build Tauri App
       working-directory: anti-detect-mvp/client-app
