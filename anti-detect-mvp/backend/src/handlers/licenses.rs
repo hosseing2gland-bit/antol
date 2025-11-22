@@ -48,12 +48,18 @@ pub async fn create_license(
     );
 
     // Calculate expiry based on plan
-    let expires_at = match req.plan {
-        LicensePlan::Trial => chrono::Local::now().naive_local() + Duration::days(7),
-        LicensePlan::Basic => chrono::Local::now().naive_local() + Duration::days(30),
-        LicensePlan::Pro => chrono::Local::now().naive_local() + Duration::days(90),
-        LicensePlan::Enterprise => chrono::Local::now().naive_local() + Duration::days(365),
+    let duration_days = if req.duration_days > 0 {
+        req.duration_days as i64
+    } else {
+        match req.plan {
+            LicensePlan::Trial => 7,
+            LicensePlan::Basic => 30,
+            LicensePlan::Pro => 90,
+            LicensePlan::Enterprise => 365,
+        }
     };
+
+    let expires_at = (Utc::now() + Duration::days(duration_days)).naive_utc();
 
     // Create features JSON based on plan
     let features = serde_json::json!({
@@ -108,14 +114,14 @@ pub async fn activate_license(
     let hardware_id = user_id.to_string(); // Convert user_id to hardware_id
     let updated_license = sqlx::query_as::<_, License>(
         r#"
-        UPDATE licenses 
+        UPDATE licenses
         SET hardware_id = $1, activated_at = $2
         WHERE license_key = $3
         RETURNING *
-        "#
+    "#
     )
     .bind(&hardware_id)
-    .bind(chrono::Local::now().naive_local())
+    .bind(Utc::now().naive_utc())
     .bind(&license_key)
     .fetch_one(&pool)
     .await

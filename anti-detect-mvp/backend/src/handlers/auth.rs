@@ -62,12 +62,14 @@ pub async fn login(
     }
 
     // Note: is_active field removed from schema
-    
+
+    let exp = (Utc::now() + Duration::hours(24)).timestamp();
+
     let claims = Claims {
         sub: user.id.to_string(),
         email: user.email.clone(),
         role: user.role.to_string(),
-        exp: (chrono::Local::now().naive_local() + Duration::hours(24)).timestamp(),
+        exp,
     };
 
     let token = encode(
@@ -113,11 +115,13 @@ pub async fn register(
         }
     })?;
 
+    let exp = (Utc::now() + Duration::hours(24)).timestamp();
+
     let claims = Claims {
         sub: user.id.to_string(),
         email: user.email.clone(),
         role: user.role.to_string(),
-        exp: (chrono::Local::now().naive_local() + Duration::hours(24)).timestamp(),
+        exp,
     };
 
     let token = encode(
