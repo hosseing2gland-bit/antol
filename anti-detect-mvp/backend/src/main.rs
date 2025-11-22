@@ -63,7 +63,13 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(pool);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    // Get port from environment variable or use default 3000
+    let port = std::env::var("API_PORT")
+        .ok()
+        .and_then(|p| p.parse::<u16>().ok())
+        .unwrap_or(3000);
+    
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     println!("✅ Server running on http://{}", addr);
     println!("📚 API Documentation: http://{}/api", addr);
 

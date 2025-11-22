@@ -1,7 +1,9 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-// API Configuration
-export const API_URL = 'http://108.143.173.222:3000/api';
+// API Configuration - Use environment variable with fallback
+export const API_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : 'http://108.143.173.222:3000/api';
 
 // Check if we're running in Tauri
 const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__;
