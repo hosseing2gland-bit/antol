@@ -110,7 +110,6 @@ jobs:
         npm install
         npm install --force @tauri-apps/cli-darwin-x64
     
-    
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
       run: npm run tauri build -- --target x86_64-apple-darwin
