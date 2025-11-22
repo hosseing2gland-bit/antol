@@ -1,14 +1,9 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use crate::{models::User, state::AppState};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use chrono::Duration;
+use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
-use jsonwebtoken::{encode, Header, EncodingKey};
-use chrono::{Utc, Duration};
-use crate::models::User;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
@@ -43,13 +38,18 @@ pub struct UserInfo {
     pub role: String,
 }
 
+#[derive(Deserialize)]
+pub struct PasswordResetRequest {
+    pub email: String,
+}
+
 pub async fn login(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = $1")
         .bind(&payload.email)
-        .fetch_optional(&pool)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((StatusCode::UNAUTHORIZED, "Invalid credentials".to_string()))?;
@@ -62,7 +62,7 @@ pub async fn login(
     }
 
     // Note: is_active field removed from schema
-    
+
     let claims = Claims {
         sub: user.id.to_string(),
         email: user.email.clone(),
@@ -88,7 +88,7 @@ pub async fn login(
 }
 
 pub async fn register(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let hashed_password = bcrypt::hash(&payload.password, bcrypt::DEFAULT_COST)
@@ -99,11 +99,11 @@ pub async fn register(
         INSERT INTO users (email, password_hash, role)
         VALUES ($1, $2, 'user')
         RETURNING *
-        "#
+        "#,
     )
     .bind(&payload.email)
     .bind(&hashed_password)
-    .fetch_one(&pool)
+    .fetch_one(&state.pool)
     .await
     .map_err(|e| {
         if e.to_string().contains("duplicate key") {
@@ -127,12 +127,41 @@ pub async fn register(
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok((StatusCode::CREATED, Json(AuthResponse {
-        token,
-        user: UserInfo {
-            id: user.id.to_string(),
-            email: user.email,
-            role: user.role.to_string(),
-        },
-    })))
+    Ok((
+        StatusCode::CREATED,
+        Json(AuthResponse {
+            token,
+            user: UserInfo {
+                id: user.id.to_string(),
+                email: user.email,
+                role: user.role.to_string(),
+            },
+        }),
+    ))
+}
+
+pub async fn request_password_reset(
+    State(state): State<AppState>,
+    Json(payload): Json<PasswordResetRequest>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = $1")
+        .bind(&payload.email)
+        .fetch_optional(&state.pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "User not found".to_string()))?;
+
+    let reset_token = Uuid::new_v4().to_string();
+
+    state
+        .email_service
+        .send_password_reset(&user.email, &reset_token)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "message": "Password reset email sent",
+        })),
+    ))
 }

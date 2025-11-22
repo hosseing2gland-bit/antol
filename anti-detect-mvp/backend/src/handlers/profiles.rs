@@ -1,18 +1,20 @@
+use crate::{
+    models::{CreateProfileRequest, Profile, UpdateProfileRequest},
+    state::AppState,
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
-use crate::models::{Profile, CreateProfileRequest, UpdateProfileRequest};
-use sqlx::PgPool;
 use uuid::Uuid;
 
 pub async fn list_profiles(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let profiles = sqlx::query_as::<_, Profile>("SELECT * FROM profiles ORDER BY created_at DESC")
-        .fetch_all(&pool)
+        .fetch_all(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -20,12 +22,12 @@ pub async fn list_profiles(
 }
 
 pub async fn get_profile(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let profile = sqlx::query_as::<_, Profile>("SELECT * FROM profiles WHERE id = $1")
         .bind(id)
-        .fetch_optional(&pool)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((StatusCode::NOT_FOUND, "Profile not found".to_string()))?;
@@ -34,7 +36,7 @@ pub async fn get_profile(
 }
 
 pub async fn create_profile(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(req): Json<CreateProfileRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     // Generate default fingerprint config if not provided
@@ -60,13 +62,13 @@ pub async fn create_profile(
             '00000000-0000-0000-0000-000000000000'::uuid, $1, $2, $3, $4
         )
         RETURNING *
-        "#
+        "#,
     )
     .bind(&req.name)
     .bind(&fingerprint_config)
     .bind(&req.proxy_id)
     .bind(&req.notes)
-    .fetch_one(&pool)
+    .fetch_one(&state.pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -74,7 +76,7 @@ pub async fn create_profile(
 }
 
 pub async fn update_profile(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Json(req): Json<UpdateProfileRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -82,19 +84,19 @@ pub async fn update_profile(
     let mut updates = Vec::new();
     let mut param_count = 1;
 
-    if let Some(name) = &req.name {
+    if req.name.is_some() {
         updates.push(format!("name = ${}", param_count));
         param_count += 1;
     }
-    if let Some(proxy_id) = &req.proxy_id {
+    if req.proxy_id.is_some() {
         updates.push(format!("proxy_id = ${}", param_count));
         param_count += 1;
     }
-    if let Some(fingerprint_config) = &req.fingerprint_config {
+    if req.fingerprint_config.is_some() {
         updates.push(format!("fingerprint_config = ${}", param_count));
         param_count += 1;
     }
-    if let Some(notes) = &req.notes {
+    if req.notes.is_some() {
         updates.push(format!("notes = ${}", param_count));
         param_count += 1;
     }
@@ -107,7 +109,7 @@ pub async fn update_profile(
     query.push_str(&format!(" WHERE id = ${} RETURNING *", param_count));
 
     let mut sql_query = sqlx::query_as::<_, Profile>(&query);
-    
+
     if let Some(name) = &req.name {
         sql_query = sql_query.bind(name);
     }
@@ -123,7 +125,7 @@ pub async fn update_profile(
     sql_query = sql_query.bind(id);
 
     let profile = sql_query
-        .fetch_optional(&pool)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((StatusCode::NOT_FOUND, "Profile not found".to_string()))?;
@@ -132,12 +134,12 @@ pub async fn update_profile(
 }
 
 pub async fn delete_profile(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let result = sqlx::query("DELETE FROM profiles WHERE id = $1")
         .bind(id)
-        .execute(&pool)
+        .execute(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 

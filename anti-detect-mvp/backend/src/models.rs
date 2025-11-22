@@ -1,7 +1,7 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
-use chrono::NaiveDateTime;
 use validator::Validate;
 
 // ============= User Models =============
@@ -12,7 +12,7 @@ pub struct User {
     pub email: String,
     #[serde(skip_serializing)]
     pub password_hash: String,
-    pub role: String,  // Use String instead of enum for database compatibility
+    pub role: String, // Use String instead of enum for database compatibility
     pub license_key: Option<String>,
     pub hardware_id: Option<String>,
     pub subscription_tier: Option<String>,
@@ -130,6 +130,8 @@ pub struct CreateLicenseRequest {
     pub plan: LicensePlan,
     pub max_profiles: i32,
     pub duration_days: i32,
+    #[validate(email)]
+    pub email: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
