@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import axios from 'axios';
-
-const API_URL = 'http://localhost:3000/api';
+import { api, API_URL } from './api';
 
 interface User {
   id: string;
@@ -106,10 +104,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   login: async (email: string, password: string) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+      const response = await api.post(`${API_URL}/auth/login`, { email, password });
       const { token, user } = response.data;
       localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       set({ token, user });
     } catch (error) {
       throw error;
@@ -118,7 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   logout: () => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
     set({ token: null, user: null });
   },
   
@@ -127,8 +125,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!token) return;
     
     try {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      const response = await axios.get(`${API_URL}/auth/me`);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const response = await api.get(`${API_URL}/auth/me`);
       set({ user: response.data });
     } catch (error) {
       get().logout();
@@ -143,7 +141,7 @@ export const useUsersStore = create<UsersState>((set) => ({
   fetchUsers: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${API_URL}/admin/users`);
+      const response = await api.get(`${API_URL}/admin/users`);
       set({ users: response.data, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -153,7 +151,7 @@ export const useUsersStore = create<UsersState>((set) => ({
   
   createUser: async (data) => {
     try {
-      const response = await axios.post(`${API_URL}/admin/users`, data);
+      const response = await api.post(`${API_URL}/admin/users`, data);
       set((state) => ({ users: [...state.users, response.data] }));
     } catch (error) {
       throw error;
@@ -162,7 +160,7 @@ export const useUsersStore = create<UsersState>((set) => ({
   
   updateUser: async (id, data) => {
     try {
-      const response = await axios.put(`${API_URL}/admin/users/${id}`, data);
+      const response = await api.put(`${API_URL}/admin/users/${id}`, data);
       set((state) => ({
         users: state.users.map((u) => (u.id === id ? response.data : u)),
       }));
@@ -173,7 +171,7 @@ export const useUsersStore = create<UsersState>((set) => ({
   
   deleteUser: async (id) => {
     try {
-      await axios.delete(`${API_URL}/admin/users/${id}`);
+      await api.delete(`${API_URL}/admin/users/${id}`);
       set((state) => ({
         users: state.users.filter((u) => u.id !== id),
       }));
@@ -190,7 +188,7 @@ export const useLicensesStore = create<LicensesState>((set) => ({
   fetchLicenses: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${API_URL}/admin/licenses`);
+      const response = await api.get(`${API_URL}/admin/licenses`);
       set({ licenses: response.data, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -200,7 +198,7 @@ export const useLicensesStore = create<LicensesState>((set) => ({
   
   createLicense: async (data) => {
     try {
-      const response = await axios.post(`${API_URL}/admin/licenses`, data);
+      const response = await api.post(`${API_URL}/admin/licenses`, data);
       set((state) => ({ licenses: [...state.licenses, response.data] }));
     } catch (error) {
       throw error;
@@ -209,7 +207,7 @@ export const useLicensesStore = create<LicensesState>((set) => ({
   
   revokeLicense: async (id) => {
     try {
-      await axios.delete(`${API_URL}/admin/licenses/${id}`);
+      await api.delete(`${API_URL}/admin/licenses/${id}`);
       set((state) => ({
         licenses: state.licenses.map((l) =>
           l.id === id ? { ...l, is_active: false } : l
@@ -228,7 +226,7 @@ export const useProfilesStore = create<ProfilesState>((set) => ({
   fetchProfiles: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${API_URL}/profiles`);
+      const response = await api.get(`${API_URL}/profiles`);
       set({ profiles: response.data, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -238,7 +236,7 @@ export const useProfilesStore = create<ProfilesState>((set) => ({
   
   createProfile: async (data) => {
     try {
-      const response = await axios.post(`${API_URL}/profiles`, data);
+      const response = await api.post(`${API_URL}/profiles`, data);
       set((state) => ({ profiles: [...state.profiles, response.data] }));
     } catch (error) {
       throw error;
@@ -247,7 +245,7 @@ export const useProfilesStore = create<ProfilesState>((set) => ({
   
   updateProfile: async (id, data) => {
     try {
-      const response = await axios.put(`${API_URL}/profiles/${id}`, data);
+      const response = await api.put(`${API_URL}/profiles/${id}`, data);
       set((state) => ({
         profiles: state.profiles.map((p) => (p.id === id ? response.data : p)),
       }));
@@ -258,7 +256,7 @@ export const useProfilesStore = create<ProfilesState>((set) => ({
   
   deleteProfile: async (id) => {
     try {
-      await axios.delete(`${API_URL}/profiles/${id}`);
+      await api.delete(`${API_URL}/profiles/${id}`);
       set((state) => ({
         profiles: state.profiles.filter((p) => p.id !== id),
       }));
@@ -275,7 +273,7 @@ export const useProxiesStore = create<ProxiesState>((set) => ({
   fetchProxies: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${API_URL}/proxies`);
+      const response = await api.get(`${API_URL}/proxies`);
       set({ proxies: response.data, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -285,7 +283,7 @@ export const useProxiesStore = create<ProxiesState>((set) => ({
   
   createProxy: async (data) => {
     try {
-      const response = await axios.post(`${API_URL}/proxies`, data);
+      const response = await api.post(`${API_URL}/proxies`, data);
       set((state) => ({ proxies: [...state.proxies, response.data] }));
     } catch (error) {
       throw error;
@@ -294,7 +292,7 @@ export const useProxiesStore = create<ProxiesState>((set) => ({
   
   updateProxy: async (id, data) => {
     try {
-      const response = await axios.put(`${API_URL}/proxies/${id}`, data);
+      const response = await api.put(`${API_URL}/proxies/${id}`, data);
       set((state) => ({
         proxies: state.proxies.map((p) => (p.id === id ? response.data : p)),
       }));
@@ -305,7 +303,7 @@ export const useProxiesStore = create<ProxiesState>((set) => ({
   
   deleteProxy: async (id) => {
     try {
-      await axios.delete(`${API_URL}/proxies/${id}`);
+      await api.delete(`${API_URL}/proxies/${id}`);
       set((state) => ({
         proxies: state.proxies.filter((p) => p.id !== id),
       }));
@@ -316,7 +314,7 @@ export const useProxiesStore = create<ProxiesState>((set) => ({
   
   testProxy: async (id) => {
     try {
-      const response = await axios.post(`${API_URL}/proxies/${id}/test`);
+      const response = await api.post(`${API_URL}/proxies/${id}/test`);
       return response.data.success;
     } catch (error) {
       return false;
