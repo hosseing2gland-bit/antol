@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use super::FingerprintConfig;
 
 /// Generate JavaScript code for fingerprint injection

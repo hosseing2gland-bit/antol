@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use serde::{Deserialize, Serialize};
 use rand::Rng;
 use uuid::Uuid;

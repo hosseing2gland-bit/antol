@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 /// Utility functions for anti-detection
 
 /// Generate a consistent hash from a string seed
