@@ -9,7 +9,7 @@ on:
 jobs:
   build-admin-intel:
     name: Build admin-app (macOS Intel)
-    runs-on: macos-13  # Intel-based runner
+    runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,10 +33,6 @@ jobs:
 
       - name: Build Tauri app (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
-      - name: Build web assets
-        working-directory: ./anti-detect-mvp/admin-app
-        run: npm run build
-
         run: npm run tauri build -- --target x86_64-apple-darwin
 
       - name: Upload admin artifacts
@@ -49,7 +45,7 @@ jobs:
 
   build-admin-apple-silicon:
     name: Build admin-app (macOS Apple Silicon)
-    runs-on: macos-latest  # Apple Silicon runner (M1/M2/M3)
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,10 +69,6 @@ jobs:
 
       - name: Build Tauri app (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
-      - name: Build web assets
-        working-directory: ./anti-detect-mvp/admin-app
-        run: npm run build
-
         run: npm run tauri build -- --target aarch64-apple-darwin
 
       - name: Upload admin artifacts
@@ -89,7 +81,7 @@ jobs:
 
   build-client-intel:
     name: Build client-app (macOS Intel)
-    runs-on: macos-13  # Intel-based runner
+    runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,10 +105,6 @@ jobs:
 
       - name: Build Tauri app (client-app)
         working-directory: ./anti-detect-mvp/client-app
-      - name: Build web assets
-        working-directory: ./anti-detect-mvp/admin-app
-        run: npm run build
-
         run: npm run tauri build -- --target x86_64-apple-darwin
 
       - name: Upload client artifacts
@@ -129,7 +117,7 @@ jobs:
 
   build-client-apple-silicon:
     name: Build client-app (macOS Apple Silicon)
-    runs-on: macos-latest  # Apple Silicon runner (M1/M2/M3)
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,10 +141,6 @@ jobs:
 
       - name: Build Tauri app (client-app)
         working-directory: ./anti-detect-mvp/client-app
-      - name: Build web assets
-        working-directory: ./anti-detect-mvp/admin-app
-        run: npm run build
-
         run: npm run tauri build -- --target aarch64-apple-darwin
 
       - name: Upload client artifacts

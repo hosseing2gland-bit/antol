@@ -37,10 +37,6 @@ jobs:
           npm install
           npm install --save-dev @tauri-apps/cli
 
-      - name: Build web assets (admin-app)
-        working-directory: ./anti-detect-mvp/admin-app
-        run: npm run build
-
       - name: Build Tauri app (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
         run: npm run tauri build
@@ -80,10 +76,6 @@ jobs:
           if (Test-Path "package-lock.json") { Remove-Item -Force package-lock.json }
           npm install
           npm install --save-dev @tauri-apps/cli
-
-      - name: Build web assets (client-app)
-        working-directory: ./anti-detect-mvp/client-app
-        run: npm run build
 
       - name: Build Tauri app (client-app)
         working-directory: ./anti-detect-mvp/client-app
