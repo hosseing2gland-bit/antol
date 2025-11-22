@@ -69,19 +69,6 @@ pub struct UpdateUserRequest {
     pub role: Option<UserRole>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
-pub struct LoginRequest {
-    #[validate(email)]
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct LoginResponse {
-    pub token: String,
-    pub user: UserResponse,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserResponse {
     pub id: Uuid,
@@ -132,12 +119,6 @@ pub struct CreateLicenseRequest {
     pub duration_days: i32,
 }
 
-#[derive(Debug, Deserialize, Validate)]
-pub struct ActivateLicenseRequest {
-    pub key: String,
-    pub hardware_id: String,
-}
-
 // ============= Profile Models =============
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
@@ -183,6 +164,7 @@ pub struct Proxy {
     pub port: i32,
     pub username: Option<String>,
     #[serde(skip_serializing)]
+    #[allow(dead_code)]
     pub password: Option<String>,
     pub country: Option<String>,
     pub created_at: NaiveDateTime,
@@ -226,20 +208,3 @@ pub struct UpdateProxyRequest {
     pub password: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct ProxyTestResponse {
-    pub success: bool,
-    pub ip: Option<String>,
-    pub country: Option<String>,
-    pub message: Option<String>,
-}
-
-// ============= Stats Models =============
-
-#[derive(Debug, Serialize)]
-pub struct DashboardStats {
-    pub total_users: i64,
-    pub total_licenses: i64,
-    pub total_profiles: i64,
-    pub total_proxies: i64,
-}
