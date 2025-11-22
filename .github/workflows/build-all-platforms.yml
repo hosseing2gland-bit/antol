@@ -32,7 +32,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm ci
+      run: npm install
     
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -68,7 +68,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm ci
+      run: npm install
     
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
@@ -104,7 +104,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm ci
+      run: npm install
     
     - name: Install Tauri CLI
       run: npm install -g @tauri-apps/cli
@@ -143,7 +143,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm ci
+      run: npm install
     
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -179,7 +179,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm ci
+      run: npm install
     
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
@@ -215,7 +215,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm ci
+      run: npm install
     
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
@@ -254,7 +254,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm ci
+      run: npm install
     
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -295,7 +295,7 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm ci
+      run: npm install
     
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
