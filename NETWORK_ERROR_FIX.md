@@ -28,7 +28,7 @@ Network Error: Cannot connect to server. Please check:
 
 ## Solutions Implemented
 
-### 1. Made Backend Port Configurable
+### 1. Made Backend Host and Port Configurable
 **File**: `anti-detect-mvp/backend/src/main.rs`
 
 Changed from:
@@ -38,16 +38,23 @@ let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
 To:
 ```rust
+// Get host from environment variable or use default 0.0.0.0 (all interfaces)
+// For production, consider setting API_HOST=127.0.0.1 for local-only access
+let host = std::env::var("API_HOST")
+    .unwrap_or_else(|_| "0.0.0.0".to_string());
+
 // Get port from environment variable or use default 3000
 let port = std::env::var("API_PORT")
     .ok()
     .and_then(|p| p.parse::<u16>().ok())
     .unwrap_or(3000);
 
-let addr = SocketAddr::from(([0, 0, 0, 0], port));
+let addr = format!("{}:{}", host, port);
 ```
 
-Now you can set `API_PORT` in `.env` to change the backend port.
+Now you can set both `API_HOST` and `API_PORT` in `.env` to configure the backend binding.
+
+**Security Note**: For production deployments accessible only locally, set `API_HOST=127.0.0.1` to prevent external access.
 
 ### 2. Fixed API URL Configuration in Apps
 **Files**: 
