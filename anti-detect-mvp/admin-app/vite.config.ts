@@ -5,13 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   
-  // Tauri expects a relative base path
-  base: './',
+  // CRITICAL: Tauri needs relative paths, not absolute
+  base: '',
   
   // Build config
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // Ensure relative paths in output
+    assetsDir: 'assets',
   },
   
   // Clear the port for dev
