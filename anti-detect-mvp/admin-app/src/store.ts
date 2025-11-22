@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API_URL = 'http://108.143.173.222:3000/api';
+const API_URL = 'http://localhost:3000/api';
 
 interface User {
   id: string;

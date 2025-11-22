@@ -8,6 +8,8 @@ use tower_http::cors::CorsLayer;
 
 mod handlers;
 mod models;
+mod email;
+mod two_factor;
 
 #[tokio::main]
 async fn main() {
