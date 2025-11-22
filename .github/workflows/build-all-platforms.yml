@@ -32,7 +32,9 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm install
+      run: |
+        npm install
+        npm install --force @tauri-apps/cli-win32-x64-msvc
     
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -68,9 +70,9 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm install
-    
-    - name: Build Client App
+      run: |
+        npm install
+        npm install --force @tauri-apps/cli-win32-x64-msvc    - name: Build Client App
       working-directory: anti-detect-mvp/client-app
       run: npm run tauri build
       env:
@@ -104,14 +106,14 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm install
+      run: |
+        npm install
+        npm install --force @tauri-apps/cli-darwin-x64
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
     
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
-      run: npm run tauri build --target x86_64-apple-darwin
+      run: npm run tauri build -- --target x86_64-apple-darwin
       env:
         RUSTFLAGS: ""
     
@@ -143,11 +145,13 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm install
+      run: |
+        npm install
+        npm install --force @tauri-apps/cli-darwin-arm64
     
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
-      run: npm run tauri build --target aarch64-apple-darwin
+      run: npm run tauri build -- --target aarch64-apple-darwin
       env:
         RUSTFLAGS: ""
     
@@ -179,11 +183,13 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm install
+      run: |
+        npm install
+        npm install --force @tauri-apps/cli-darwin-x64
     
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
-      run: npm run tauri build --target x86_64-apple-darwin
+      run: npm run tauri build -- --target x86_64-apple-darwin
       env:
         RUSTFLAGS: ""
     
@@ -215,11 +221,13 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm install
+      run: |
+        npm install
+        npm install --force @tauri-apps/cli-darwin-arm64
     
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
-      run: npm run tauri build --target aarch64-apple-darwin
+      run: npm run tauri build -- --target aarch64-apple-darwin
       env:
         RUSTFLAGS: ""
     
