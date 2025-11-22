@@ -28,7 +28,8 @@ jobs:
       - name: Install dependencies (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
         run: |
-          npm ci
+          rm -rf node_modules package-lock.json
+          npm install
           npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (admin-app)
@@ -64,7 +65,8 @@ jobs:
       - name: Install dependencies (admin-app)
         working-directory: ./anti-detect-mvp/admin-app
         run: |
-          npm ci
+          rm -rf node_modules package-lock.json
+          npm install
           npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (admin-app)
@@ -100,7 +102,8 @@ jobs:
       - name: Install dependencies (client-app)
         working-directory: ./anti-detect-mvp/client-app
         run: |
-          npm ci
+          rm -rf node_modules package-lock.json
+          npm install
           npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (client-app)
@@ -136,7 +139,8 @@ jobs:
       - name: Install dependencies (client-app)
         working-directory: ./anti-detect-mvp/client-app
         run: |
-          npm ci
+          rm -rf node_modules package-lock.json
+          npm install
           npm install --save-dev @tauri-apps/cli
 
       - name: Build Tauri app (client-app)
