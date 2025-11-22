@@ -1,7 +1,5 @@
 /// Utility functions for anti-detection
 
-#![allow(dead_code)]
-
 /// Generate a consistent hash from a string seed
 pub fn seed_hash(seed: &str) -> u64 {
     let mut hash: u64 = 5381;

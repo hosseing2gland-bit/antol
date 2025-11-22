@@ -1,6 +1,8 @@
 /// Anti-Detection Module
 /// Provides fingerprint spoofing and anti-tracking capabilities
 
+#![allow(dead_code, unused_imports)]
+
 pub mod fingerprint;
 pub mod browser_launch;
 pub mod injection;
