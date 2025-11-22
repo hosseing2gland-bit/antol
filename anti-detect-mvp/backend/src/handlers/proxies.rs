@@ -70,15 +70,15 @@ pub async fn update_proxy(
     let mut updates = Vec::new();
     let mut param_count = 1;
 
-    if let Some(name) = &req.name {
+    if let Some(_name) = &req.name {
         updates.push(format!("name = ${}", param_count));
         param_count += 1;
     }
-    if let Some(username) = &req.username {
+    if let Some(_username) = &req.username {
         updates.push(format!("username = ${}", param_count));
         param_count += 1;
     }
-    if let Some(password) = &req.password {
+    if let Some(_password) = &req.password {
         updates.push(format!("password = ${}", param_count));
         param_count += 1;
     }
