@@ -1,0 +1,407 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Build Windows Admin App
+  build-windows-admin:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-pc-windows-msvc
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Admin App
+      working-directory: anti-detect-mvp/admin-app
+      run: npx tauri build
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Admin App Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-windows
+        path: anti-detect-mvp/admin-app/src-tauri/target/release/bundle/nsis/*.exe
+        retention-days: 7
+
+  # Build Windows Client App
+  build-windows-client:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/client-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-pc-windows-msvc
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Client App
+      working-directory: anti-detect-mvp/client-app
+      run: npx tauri build
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Client App Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-windows
+        path: anti-detect-mvp/client-app/src-tauri/target/release/bundle/nsis/*.exe
+        retention-days: 7
+
+  # Build macOS Admin App (Intel)
+  build-macos-admin-intel:
+    runs-on: macos-13
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-apple-darwin
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Admin App
+      working-directory: anti-detect-mvp/admin-app
+      run: npx tauri build --target x86_64-apple-darwin
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Admin App DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-macos-intel
+        path: anti-detect-mvp/admin-app/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 7
+
+  # Build macOS Admin App (Apple Silicon)
+  build-macos-admin-silicon:
+    runs-on: macos-14
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-apple-darwin
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Admin App
+      working-directory: anti-detect-mvp/admin-app
+      run: npx tauri build --target aarch64-apple-darwin
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Admin App DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-macos-silicon
+        path: anti-detect-mvp/admin-app/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 7
+
+  # Build macOS Client App (Intel)
+  build-macos-client-intel:
+    runs-on: macos-13
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/client-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-apple-darwin
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Client App
+      working-directory: anti-detect-mvp/client-app
+      run: npx tauri build --target x86_64-apple-darwin
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Client App DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-macos-intel
+        path: anti-detect-mvp/client-app/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 7
+
+  # Build macOS Client App (Apple Silicon)
+  build-macos-client-silicon:
+    runs-on: macos-14
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/client-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-apple-darwin
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Client App
+      working-directory: anti-detect-mvp/client-app
+      run: npx tauri build --target aarch64-apple-darwin
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Client App DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-macos-silicon
+        path: anti-detect-mvp/client-app/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 7
+
+  # Build Linux Admin App
+  build-linux-admin:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Admin App
+      working-directory: anti-detect-mvp/admin-app
+      run: npx tauri build
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Admin App AppImage
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-linux
+        path: |
+          anti-detect-mvp/admin-app/src-tauri/target/release/bundle/appimage/*.AppImage
+          anti-detect-mvp/admin-app/src-tauri/target/release/bundle/deb/*.deb
+        retention-days: 7
+
+  # Build Linux Client App
+  build-linux-client:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/client-app/package-lock.json
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Build Client App
+      working-directory: anti-detect-mvp/client-app
+      run: npx tauri build
+      env:
+        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+    
+    - name: Upload Client App AppImage
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-linux
+        path: |
+          anti-detect-mvp/client-app/src-tauri/target/release/bundle/appimage/*.AppImage
+          anti-detect-mvp/client-app/src-tauri/target/release/bundle/deb/*.deb
+        retention-days: 7
+
+  # Build Backend
+  build-backend:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: anti-detect-mvp/backend/target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build Backend
+      working-directory: anti-detect-mvp/backend
+      run: cargo build --release
+    
+    - name: Upload Backend Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-linux
+        path: anti-detect-mvp/backend/target/release/backend
+        retention-days: 7
+
+  # Summary Job
+  build-summary:
+    needs: 
+      - build-windows-admin
+      - build-windows-client
+      - build-macos-admin-intel
+      - build-macos-admin-silicon
+      - build-macos-client-intel
+      - build-macos-client-silicon
+      - build-linux-admin
+      - build-linux-client
+      - build-backend
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Build Summary
+      run: |
+        echo "✅ All builds completed successfully!"
+        echo ""
+        echo "📦 Artifacts created:"
+        echo "  - Windows: Admin App, Client App"
+        echo "  - macOS (Intel): Admin App, Client App"
+        echo "  - macOS (Apple Silicon): Admin App, Client App"
+        echo "  - Linux: Admin App, Client App"
+        echo "  - Backend: Linux Binary"
