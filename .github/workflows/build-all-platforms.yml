@@ -34,15 +34,11 @@ jobs:
       working-directory: anti-detect-mvp/admin-app
       run: npm ci
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
-      run: npx tauri build
+      run: npm run tauri build
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Admin App Installer
       uses: actions/upload-artifact@v4
@@ -74,15 +70,11 @@ jobs:
       working-directory: anti-detect-mvp/client-app
       run: npm ci
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
-      run: npx tauri build
+      run: npm run tauri build
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Client App Installer
       uses: actions/upload-artifact@v4
@@ -119,10 +111,9 @@ jobs:
     
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
-      run: npx tauri build --target x86_64-apple-darwin
+      run: npm run tauri build --target x86_64-apple-darwin
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Admin App DMG
       uses: actions/upload-artifact@v4
@@ -154,15 +145,11 @@ jobs:
       working-directory: anti-detect-mvp/admin-app
       run: npm ci
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
-      run: npx tauri build --target aarch64-apple-darwin
+      run: npm run tauri build --target aarch64-apple-darwin
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Admin App DMG
       uses: actions/upload-artifact@v4
@@ -194,15 +181,11 @@ jobs:
       working-directory: anti-detect-mvp/client-app
       run: npm ci
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
-      run: npx tauri build --target x86_64-apple-darwin
+      run: npm run tauri build --target x86_64-apple-darwin
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Client App DMG
       uses: actions/upload-artifact@v4
@@ -234,15 +217,11 @@ jobs:
       working-directory: anti-detect-mvp/client-app
       run: npm ci
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
-      run: npx tauri build --target aarch64-apple-darwin
+      run: npm run tauri build --target aarch64-apple-darwin
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Client App DMG
       uses: actions/upload-artifact@v4
@@ -277,15 +256,11 @@ jobs:
       working-directory: anti-detect-mvp/admin-app
       run: npm ci
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
-      run: npx tauri build
+      run: npm run tauri build
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Admin App AppImage
       uses: actions/upload-artifact@v4
@@ -322,15 +297,11 @@ jobs:
       working-directory: anti-detect-mvp/client-app
       run: npm ci
     
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
-      run: npx tauri build
+      run: npm run tauri build
       env:
-        TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-        TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        RUSTFLAGS: ""
     
     - name: Upload Client App AppImage
       uses: actions/upload-artifact@v4
@@ -372,6 +343,8 @@ jobs:
     - name: Build Backend
       working-directory: anti-detect-mvp/backend
       run: cargo build --release
+      env:
+        RUSTFLAGS: ""
     
     - name: Upload Backend Binary
       uses: actions/upload-artifact@v4
