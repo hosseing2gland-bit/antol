@@ -1,5 +1,7 @@
 use super::FingerprintConfig;
 
+#[allow(dead_code)]
+
 /// Generate JavaScript code for fingerprint injection
 /// This will be injected into the browser before any page loads
 pub fn generate_injection_script(config: &FingerprintConfig) -> String {

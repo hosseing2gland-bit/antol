@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use rand::Rng;
 use uuid::Uuid;
 
+#[allow(dead_code)]
+
 /// Complete fingerprint configuration for a browser profile
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FingerprintConfig {
