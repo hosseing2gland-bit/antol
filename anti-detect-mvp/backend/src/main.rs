@@ -63,7 +63,18 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .with_state(pool);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    // Get host from environment variable or use default 0.0.0.0 (all interfaces)
+    // For production, consider setting API_HOST=127.0.0.1 for local-only access
+    let host = std::env::var("API_HOST")
+        .unwrap_or_else(|_| "0.0.0.0".to_string());
+    
+    // Get port from environment variable or use default 3000
+    let port = std::env::var("API_PORT")
+        .ok()
+        .and_then(|p| p.parse::<u16>().ok())
+        .unwrap_or(3000);
+    
+    let addr = format!("{}:{}", host, port);
     println!("✅ Server running on http://{}", addr);
     println!("📚 API Documentation: http://{}/api", addr);
 
