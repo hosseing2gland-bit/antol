@@ -32,7 +32,7 @@ export default function Proxies() {
 
   const loadProxies = async () => {
     try {
-      const data = await apiClient.get('/api/proxies');
+      const data = await apiClient.get<Proxy[]>('/api/proxies');
       setProxies(data);
     } catch (error) {
       console.error('Failed to load proxies:', error);

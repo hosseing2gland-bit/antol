@@ -39,7 +39,7 @@ export default function Profiles() {
 
   const loadProfiles = async () => {
     try {
-      const data = await apiClient.get('/api/profiles');
+      const data = await apiClient.get<Profile[]>('/api/profiles');
       setProfiles(data);
     } catch (error) {
       console.error('Failed to load profiles:', error);
@@ -50,7 +50,7 @@ export default function Profiles() {
 
   const loadProxies = async () => {
     try {
-      const data = await apiClient.get('/api/proxies');
+      const data = await apiClient.get<Proxy[]>('/api/proxies');
       setProxies(data);
     } catch (error) {
       console.error('Failed to load proxies:', error);
