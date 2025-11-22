@@ -1,23 +1,69 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // API Configuration
 export const API_URL = 'http://108.143.173.222:3000/api';
 
 // Check if we're running in Tauri
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__;
+
+// Tauri HTTP wrapper
+async function tauriHttpRequest(config: AxiosRequestConfig): Promise<AxiosResponse> {
+  if (!isTauri) {
+    throw new Error('Not in Tauri environment');
+  }
+
+  const { http } = (window as any).__TAURI__;
+  const url = config.baseURL ? `${config.baseURL}${config.url || ''}` : config.url;
+  
+  const options: any = {
+    method: config.method?.toUpperCase() || 'GET',
+    headers: config.headers || {},
+    timeout: config.timeout || 30000,
+  };
+
+  if (config.data) {
+    options.body = {
+      type: 'Json',
+      payload: config.data,
+    };
+  }
+
+  try {
+    const response = await http.fetch(url, options);
+    
+    return {
+      data: response.data,
+      status: response.status,
+      statusText: response.ok ? 'OK' : 'Error',
+      headers: response.headers || {},
+      config: config,
+    } as AxiosResponse;
+  } catch (error: any) {
+    throw {
+      message: error.message || 'Network request failed',
+      code: 'ERR_NETWORK',
+      config: config,
+      response: error.response,
+    };
+  }
+}
 
 // Create axios instance with custom config
 export const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000, // 30 seconds timeout
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-  // Important for VPN and CORS compatibility
   validateStatus: (status) => status < 500,
-  // Disable XMLHttpRequest in Tauri
-  adapter: isTauri ? undefined : undefined,
 });
+
+// Override adapter for Tauri
+if (isTauri) {
+  (api.defaults as any).adapter = async (config: AxiosRequestConfig) => {
+    return tauriHttpRequest(config);
+  };
+}
 
 // Request interceptor to add auth token
 api.interceptors.request.use(

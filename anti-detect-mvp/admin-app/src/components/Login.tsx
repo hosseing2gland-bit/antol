@@ -14,7 +14,23 @@ export default function Login() {
     try {
       await login(email, password);
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      console.error('Login error:', err);
+      
+      let errorMessage = 'Login failed';
+      
+      if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'Network Error: Cannot connect to server. Please check:\n1. Your internet connection\n2. VPN if enabled\n3. Server is running at http://108.143.173.222:3000';
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request Timeout: Server took too long to respond';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'Invalid email or password';
+      } else if (err.response?.status === 400) {
+        errorMessage = 'Bad request: Please check your credentials';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     }
   };
 
