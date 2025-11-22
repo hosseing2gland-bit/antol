@@ -1,0 +1,85 @@
+name: Build Windows Only
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'anti-detect-mvp/admin-app/**'
+      - 'anti-detect-mvp/client-app/**'
+      - '.github/workflows/windows-only.yml'
+  workflow_dispatch:
+
+jobs:
+  build-windows-admin:
+    name: Build Admin App (Windows)
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-pc-windows-msvc
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: |
+        npm install
+        npm install @tauri-apps/cli
+    
+    - name: Build Tauri App
+      working-directory: anti-detect-mvp/admin-app
+      run: npm run tauri build
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-windows
+        path: |
+          anti-detect-mvp/admin-app/src-tauri/target/release/bundle/nsis/*.exe
+          anti-detect-mvp/admin-app/src-tauri/target/release/bundle/msi/*.msi
+        retention-days: 30
+
+  build-windows-client:
+    name: Build Client App (Windows)
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-pc-windows-msvc
+    
+    - name: Install dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: |
+        npm install
+        npm install @tauri-apps/cli
+    
+    - name: Build Tauri App
+      working-directory: anti-detect-mvp/client-app
+      run: npm run tauri build
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-windows
+        path: |
+          anti-detect-mvp/client-app/src-tauri/target/release/bundle/nsis/*.exe
+          anti-detect-mvp/client-app/src-tauri/target/release/bundle/msi/*.msi
+        retention-days: 30
