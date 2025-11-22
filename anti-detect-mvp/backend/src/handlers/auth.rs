@@ -1,14 +1,9 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
-use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
-use jsonwebtoken::{encode, Header, EncodingKey};
-use chrono::{Utc, Duration};
 use crate::models::User;
+use crate::state::AppState;
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use chrono::{Duration, Utc};
+use jsonwebtoken::{encode, EncodingKey, Header};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
@@ -44,12 +39,12 @@ pub struct UserInfo {
 }
 
 pub async fn login(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = $1")
         .bind(&payload.email)
-        .fetch_optional(&pool)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((StatusCode::UNAUTHORIZED, "Invalid credentials".to_string()))?;
@@ -62,18 +57,20 @@ pub async fn login(
     }
 
     // Note: is_active field removed from schema
-    
+
     let claims = Claims {
         sub: user.id.to_string(),
         email: user.email.clone(),
         role: user.role.to_string(),
-        exp: (chrono::Local::now().naive_local() + Duration::hours(24)).timestamp(),
+        exp: (Utc::now().naive_utc() + Duration::hours(24))
+            .and_utc()
+            .timestamp(),
     };
 
     let token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret("your-secret-key".as_ref()),
+        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -88,7 +85,7 @@ pub async fn login(
 }
 
 pub async fn register(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let hashed_password = bcrypt::hash(&payload.password, bcrypt::DEFAULT_COST)
@@ -99,11 +96,11 @@ pub async fn register(
         INSERT INTO users (email, password_hash, role)
         VALUES ($1, $2, 'user')
         RETURNING *
-        "#
+        "#,
     )
     .bind(&payload.email)
     .bind(&hashed_password)
-    .fetch_one(&pool)
+    .fetch_one(&state.pool)
     .await
     .map_err(|e| {
         if e.to_string().contains("duplicate key") {
@@ -117,22 +114,27 @@ pub async fn register(
         sub: user.id.to_string(),
         email: user.email.clone(),
         role: user.role.to_string(),
-        exp: (chrono::Local::now().naive_local() + Duration::hours(24)).timestamp(),
+        exp: (Utc::now().naive_utc() + Duration::hours(24))
+            .and_utc()
+            .timestamp(),
     };
 
     let token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret("your-secret-key".as_ref()),
+        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok((StatusCode::CREATED, Json(AuthResponse {
-        token,
-        user: UserInfo {
-            id: user.id.to_string(),
-            email: user.email,
-            role: user.role.to_string(),
-        },
-    })))
+    Ok((
+        StatusCode::CREATED,
+        Json(AuthResponse {
+            token,
+            user: UserInfo {
+                id: user.id.to_string(),
+                email: user.email,
+                role: user.role.to_string(),
+            },
+        }),
+    ))
 }
