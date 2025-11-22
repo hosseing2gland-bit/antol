@@ -1,36 +1,121 @@
 use lettre::{
-    Message, SmtpTransport, Transport,
-    message::header::ContentType,
-    transport::smtp::authentication::Credentials,
+    message::header::ContentType, transport::smtp::authentication::Credentials, Message,
+    SmtpTransport, Transport,
 };
-use std::env;
+use std::{env, sync::Arc};
+use thiserror::Error;
+use tokio::sync::Mutex;
+
+pub trait Mailer: Send + Sync {
+    fn send(&self, email: &Message) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+}
+
+impl Mailer for SmtpTransport {
+    fn send(&self, email: &Message) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        Transport::send(self, email)
+            .map(|_| ())
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum EmailError {
+    #[error("SMTP configuration missing: {0}")]
+    MissingConfig(String),
+    #[error("Failed to build SMTP client: {0}")]
+    BuildError(String),
+    #[error("Email service disabled: {0}")]
+    Disabled(String),
+    #[error("Failed to send email: {0}")]
+    SendError(String),
+}
 
 pub struct EmailService {
-    mailer: SmtpTransport,
-    from_email: String,
+    pub mailer: Option<Arc<dyn Mailer>>,
+    pub from_email: String,
+    pub disabled_reason: Option<String>,
 }
 
 impl EmailService {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let smtp_host = env::var("SMTP_HOST").unwrap_or_else(|_| "smtp.gmail.com".to_string());
+    pub fn new() -> Result<Self, EmailError> {
+        let from_email =
+            env::var("SMTP_FROM").unwrap_or_else(|_| "noreply@antidetect.local".to_string());
+
+        let required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD"];
+        let missing_vars: Vec<String> = required
+            .iter()
+            .filter(|var| env::var(var).is_err())
+            .map(|var| var.to_string())
+            .collect();
+
+        if !missing_vars.is_empty() {
+            return Ok(Self::disabled(
+                from_email,
+                format!("missing environment variables: {}", missing_vars.join(", ")),
+            ));
+        }
+
+        let smtp_host = env::var("SMTP_HOST").unwrap();
         let smtp_port = env::var("SMTP_PORT")
             .unwrap_or_else(|_| "587".to_string())
-            .parse::<u16>()?;
-        let smtp_user = env::var("SMTP_USER")?;
-        let smtp_password = env::var("SMTP_PASSWORD")?;
-        let from_email = env::var("SMTP_FROM").unwrap_or_else(|_| "noreply@antidetect.local".to_string());
+            .parse::<u16>()
+            .map_err(|e| EmailError::MissingConfig(e.to_string()))?;
+        let smtp_user = env::var("SMTP_USER").unwrap();
+        let smtp_password = env::var("SMTP_PASSWORD").unwrap();
 
         let creds = Credentials::new(smtp_user, smtp_password);
 
-        let mailer = SmtpTransport::relay(&smtp_host)?
+        let mailer = SmtpTransport::relay(&smtp_host)
+            .map_err(|e| EmailError::BuildError(e.to_string()))?
             .port(smtp_port)
             .credentials(creds)
             .build();
 
-        Ok(EmailService { mailer, from_email })
+        Ok(EmailService {
+            mailer: Some(Arc::new(mailer)),
+            from_email,
+            disabled_reason: None,
+        })
     }
 
-    pub fn send_welcome_email(&self, to: &str, username: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn with_mailer(mailer: Arc<dyn Mailer>, from_email: String) -> Self {
+        EmailService {
+            mailer: Some(mailer),
+            from_email,
+            disabled_reason: None,
+        }
+    }
+
+    pub fn disabled(from_email: String, reason: String) -> Self {
+        EmailService {
+            mailer: None,
+            from_email,
+            disabled_reason: Some(reason),
+        }
+    }
+
+    fn ensure_mailer(&self) -> Result<&Arc<dyn Mailer>, EmailError> {
+        self.mailer.as_ref().ok_or_else(|| {
+            EmailError::Disabled(
+                self.disabled_reason
+                    .clone()
+                    .unwrap_or_else(|| "SMTP configuration not set".to_string()),
+            )
+        })
+    }
+
+    fn send_email(&self, email: Message) -> Result<(), EmailError> {
+        let mailer = self.ensure_mailer()?;
+        mailer
+            .send(&email)
+            .map_err(|e| EmailError::SendError(e.to_string()))
+    }
+
+    pub fn send_welcome_email(
+        &self,
+        to: &str,
+        username: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let email = Message::builder()
             .from(self.from_email.parse()?)
             .to(to.parse()?)
@@ -66,11 +151,16 @@ impl EmailService {
                 username
             ))?;
 
-        self.mailer.send(&email)?;
-        Ok(())
+        self.send_email(email)
+            .map_err(|e| Box::<dyn std::error::Error>::from(e.to_string()))
     }
 
-    pub fn send_license_activated(&self, to: &str, license_key: &str, expires_at: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_license_activated(
+        &self,
+        to: &str,
+        license_key: &str,
+        expires_at: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let email = Message::builder()
             .from(self.from_email.parse()?)
             .to(to.parse()?)
@@ -103,11 +193,16 @@ impl EmailService {
                 license_key, expires_at
             ))?;
 
-        self.mailer.send(&email)?;
-        Ok(())
+        self.send_email(email)
+            .map_err(|e| Box::<dyn std::error::Error>::from(e.to_string()))
     }
 
-    pub fn send_license_expiring_soon(&self, to: &str, license_key: &str, days_remaining: i32) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_license_expiring_soon(
+        &self,
+        to: &str,
+        license_key: &str,
+        days_remaining: i32,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let email = Message::builder()
             .from(self.from_email.parse()?)
             .to(to.parse()?)
@@ -137,11 +232,15 @@ impl EmailService {
                 days_remaining, license_key, days_remaining
             ))?;
 
-        self.mailer.send(&email)?;
-        Ok(())
+        self.send_email(email)
+            .map_err(|e| Box::<dyn std::error::Error>::from(e.to_string()))
     }
 
-    pub fn send_license_expired(&self, to: &str, license_key: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_license_expired(
+        &self,
+        to: &str,
+        license_key: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let email = Message::builder()
             .from(self.from_email.parse()?)
             .to(to.parse()?)
@@ -171,13 +270,17 @@ impl EmailService {
                 license_key
             ))?;
 
-        self.mailer.send(&email)?;
-        Ok(())
+        self.send_email(email)
+            .map_err(|e| Box::<dyn std::error::Error>::from(e.to_string()))
     }
 
-    pub fn send_password_reset(&self, to: &str, reset_token: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_password_reset(
+        &self,
+        to: &str,
+        reset_token: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let reset_link = format!("http://localhost:8080/reset-password?token={}", reset_token);
-        
+
         let email = Message::builder()
             .from(self.from_email.parse()?)
             .to(to.parse()?)
@@ -209,19 +312,41 @@ impl EmailService {
                 reset_link, reset_link
             ))?;
 
-        self.mailer.send(&email)?;
-        Ok(())
+        self.send_email(email)
+            .map_err(|e| Box::<dyn std::error::Error>::from(e.to_string()))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
+
+    #[derive(Clone, Default)]
+    struct MockMailer {
+        sent: Arc<Mutex<Vec<Vec<u8>>>>,
+    }
+
+    impl Mailer for MockMailer {
+        fn send(&self, email: &Message) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+            self.sent.blocking_lock().push(email.formatted());
+            Ok(())
+        }
+    }
 
     #[test]
-    #[ignore] // Run manually with proper SMTP credentials
-    fn test_send_welcome_email() {
-        let service = EmailService::new().unwrap();
-        service.send_welcome_email("test@example.com", "TestUser").unwrap();
+    fn sends_email_with_mock_mailer() {
+        let mock = MockMailer::default();
+        let service =
+            EmailService::with_mailer(Arc::new(mock.clone()), "noreply@example.com".to_string());
+
+        service
+            .send_password_reset("user@example.com", "reset-token")
+            .unwrap();
+
+        let sent = mock.sent.blocking_lock();
+        assert_eq!(sent.len(), 1);
+        let email = String::from_utf8(sent[0].clone()).unwrap();
+        assert!(email.contains("reset-token"));
     }
 }

@@ -1,18 +1,20 @@
+use crate::{
+    models::{CreateProxyRequest, Proxy, UpdateProxyRequest},
+    state::AppState,
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
-use crate::models::{Proxy, CreateProxyRequest, UpdateProxyRequest};
-use sqlx::PgPool;
 use uuid::Uuid;
 
 pub async fn list_proxies(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let proxies = sqlx::query_as::<_, Proxy>("SELECT * FROM proxies ORDER BY created_at DESC")
-        .fetch_all(&pool)
+        .fetch_all(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -20,12 +22,12 @@ pub async fn list_proxies(
 }
 
 pub async fn get_proxy(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let proxy = sqlx::query_as::<_, Proxy>("SELECT * FROM proxies WHERE id = $1")
         .bind(id)
-        .fetch_optional(&pool)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((StatusCode::NOT_FOUND, "Proxy not found".to_string()))?;
@@ -34,7 +36,7 @@ pub async fn get_proxy(
 }
 
 pub async fn create_proxy(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Json(req): Json<CreateProxyRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let proxy = sqlx::query_as::<_, Proxy>(
@@ -46,7 +48,7 @@ pub async fn create_proxy(
             '00000000-0000-0000-0000-000000000000'::uuid, $1, $2, $3, $4, $5, $6
         )
         RETURNING *
-        "#
+        "#,
     )
     .bind(&req.name)
     .bind(&req.proxy_type.to_string())
@@ -54,7 +56,7 @@ pub async fn create_proxy(
     .bind(req.port)
     .bind(&req.username)
     .bind(&req.password)
-    .fetch_one(&pool)
+    .fetch_one(&state.pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -62,7 +64,7 @@ pub async fn create_proxy(
 }
 
 pub async fn update_proxy(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Json(req): Json<UpdateProxyRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -70,15 +72,15 @@ pub async fn update_proxy(
     let mut updates = Vec::new();
     let mut param_count = 1;
 
-    if let Some(name) = &req.name {
+    if req.name.is_some() {
         updates.push(format!("name = ${}", param_count));
         param_count += 1;
     }
-    if let Some(username) = &req.username {
+    if req.username.is_some() {
         updates.push(format!("username = ${}", param_count));
         param_count += 1;
     }
-    if let Some(password) = &req.password {
+    if req.password.is_some() {
         updates.push(format!("password = ${}", param_count));
         param_count += 1;
     }
@@ -91,7 +93,7 @@ pub async fn update_proxy(
     query.push_str(&format!(" WHERE id = ${} RETURNING *", param_count));
 
     let mut sql_query = sqlx::query_as::<_, Proxy>(&query);
-    
+
     if let Some(name) = &req.name {
         sql_query = sql_query.bind(name);
     }
@@ -104,7 +106,7 @@ pub async fn update_proxy(
     sql_query = sql_query.bind(id);
 
     let proxy = sql_query
-        .fetch_optional(&pool)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((StatusCode::NOT_FOUND, "Proxy not found".to_string()))?;
@@ -113,12 +115,12 @@ pub async fn update_proxy(
 }
 
 pub async fn delete_proxy(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let result = sqlx::query("DELETE FROM proxies WHERE id = $1")
         .bind(id)
-        .execute(&pool)
+        .execute(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -130,12 +132,12 @@ pub async fn delete_proxy(
 }
 
 pub async fn test_proxy(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     let proxy = sqlx::query_as::<_, Proxy>("SELECT * FROM proxies WHERE id = $1")
         .bind(id)
-        .fetch_optional(&pool)
+        .fetch_optional(&state.pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((StatusCode::NOT_FOUND, "Proxy not found".to_string()))?;
