@@ -72,7 +72,9 @@ jobs:
       working-directory: anti-detect-mvp/client-app
       run: |
         npm install
-        npm install --force @tauri-apps/cli-win32-x64-msvc    - name: Build Client App
+        npm install --force @tauri-apps/cli-win32-x64-msvc
+    
+    - name: Build Client App
       working-directory: anti-detect-mvp/client-app
       run: npm run tauri build
       env:
