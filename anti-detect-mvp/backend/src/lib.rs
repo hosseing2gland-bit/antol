@@ -35,7 +35,7 @@ pub fn create_app(pool: PgPool) -> Router {
             post(handlers::licenses::revoke_license),
         )
         .route(
-            "/api/licenses/activate",
+            "/api/licenses/activate/:license_key",
             post(handlers::licenses::activate_license),
         )
         .route(

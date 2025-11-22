@@ -1,23 +1,46 @@
-use axum::{extract::State, http::StatusCode, Json};
-use backend::handlers::{dashboard, licenses};
-use backend::models::{ActivateLicenseRequest, CreateLicenseRequest, LicensePlan};
+use axum::{body::Body, http::Request, http::StatusCode};
+use backend::create_app;
+use backend::models::{
+    ActivateLicenseRequest, CreateLicenseRequest, DashboardStats, License, LicensePlan,
+};
 use chrono::Duration;
+use http_body_util::BodyExt;
+use serde_json::json;
 use sqlx::PgPool;
+use tower::util::ServiceExt;
 use uuid::Uuid;
 
 #[sqlx::test(migrations = "./tests/migrations")]
 async fn create_license_uses_duration_and_request(pool: PgPool) {
-    let request = CreateLicenseRequest {
+    let app = create_app(pool.clone());
+
+    let payload = json!(CreateLicenseRequest {
         plan: LicensePlan::Pro,
         max_profiles: 15,
         duration_days: 45,
-    };
+    });
 
-    let (status, Json(license)) = licenses::create_license(State(pool.clone()), Json(request))
+    let response = app
+        .clone()
+        .oneshot(
+            Request::post("/api/licenses")
+                .header("content-type", "application/json")
+                .body(Body::from(payload.to_string()))
+                .expect("request should build"),
+        )
         .await
-        .expect("license should be created");
+        .expect("response should be returned");
 
-    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let body = response
+        .into_body()
+        .collect()
+        .await
+        .expect("body should read")
+        .to_bytes();
+    let license: License = serde_json::from_slice(&body).expect("license should deserialize");
+
     assert_eq!(license.max_profiles, 15);
 
     let plan = license
@@ -32,32 +55,65 @@ async fn create_license_uses_duration_and_request(pool: PgPool) {
     let max_expected = chrono::Local::now().naive_local() + Duration::days(46);
     assert!(
         expires_at >= min_expected && expires_at <= max_expected,
-        "expiry should be within expected duration window"
+        "expiry should be within expected duration window",
     );
 }
 
 #[sqlx::test(migrations = "./tests/migrations")]
 async fn activate_license_uses_activate_license_request(pool: PgPool) {
-    let (_, Json(license)) = licenses::create_license(
-        State(pool.clone()),
-        Json(CreateLicenseRequest {
-            plan: LicensePlan::Basic,
-            max_profiles: 5,
-            duration_days: 30,
-        }),
-    )
-    .await
-    .expect("license creation should succeed");
+    let app = create_app(pool.clone());
 
-    let Json(activated) = licenses::activate_license(
-        State(pool.clone()),
-        Json(ActivateLicenseRequest {
-            key: license.key.clone(),
-            hardware_id: "HW-TEST-1234".to_string(),
-        }),
-    )
-    .await
-    .expect("activation should succeed");
+    let creation_payload = json!(CreateLicenseRequest {
+        plan: LicensePlan::Basic,
+        max_profiles: 5,
+        duration_days: 30,
+    });
+
+    let creation_response = app
+        .clone()
+        .oneshot(
+            Request::post("/api/licenses")
+                .header("content-type", "application/json")
+                .body(Body::from(creation_payload.to_string()))
+                .expect("request should build"),
+        )
+        .await
+        .expect("creation should return response");
+
+    let license_body = creation_response
+        .into_body()
+        .collect()
+        .await
+        .expect("license body should read")
+        .to_bytes();
+    let license: License =
+        serde_json::from_slice(&license_body).expect("license should deserialize");
+
+    let activation_payload = json!(ActivateLicenseRequest {
+        hardware_id: "HW-TEST-1234".to_string(),
+    });
+
+    let activation_response = app
+        .clone()
+        .oneshot(
+            Request::post(format!("/api/licenses/activate/{}", license.key))
+                .header("content-type", "application/json")
+                .body(Body::from(activation_payload.to_string()))
+                .expect("activation request should build"),
+        )
+        .await
+        .expect("activation should return response");
+
+    assert_eq!(activation_response.status(), StatusCode::OK);
+
+    let activation_body = activation_response
+        .into_body()
+        .collect()
+        .await
+        .expect("activation body should read")
+        .to_bytes();
+    let activated: License =
+        serde_json::from_slice(&activation_body).expect("activated license should deserialize");
 
     assert_eq!(activated.hardware_id.as_deref(), Some("HW-TEST-1234"));
     assert!(activated.activated_at.is_some());
@@ -65,6 +121,8 @@ async fn activate_license_uses_activate_license_request(pool: PgPool) {
 
 #[sqlx::test(migrations = "./tests/migrations")]
 async fn dashboard_stats_report_totals(pool: PgPool) {
+    let app = create_app(pool.clone());
+
     let user_id: Uuid = sqlx::query_scalar(
         "INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id",
     )
@@ -75,16 +133,21 @@ async fn dashboard_stats_report_totals(pool: PgPool) {
     .await
     .expect("user insert should work");
 
-    let (_, Json(_license)) = licenses::create_license(
-        State(pool.clone()),
-        Json(CreateLicenseRequest {
-            plan: LicensePlan::Trial,
-            max_profiles: 2,
-            duration_days: 7,
-        }),
-    )
-    .await
-    .expect("license creation should succeed");
+    let payload = json!(CreateLicenseRequest {
+        plan: LicensePlan::Trial,
+        max_profiles: 2,
+        duration_days: 7,
+    });
+
+    app.clone()
+        .oneshot(
+            Request::post("/api/licenses")
+                .header("content-type", "application/json")
+                .body(Body::from(payload.to_string()))
+                .expect("request should build"),
+        )
+        .await
+        .expect("license creation should succeed");
 
     sqlx::query(
         "INSERT INTO proxies (user_id, name, protocol, host, port) VALUES ($1, $2, $3, $4, $5)",
@@ -106,9 +169,25 @@ async fn dashboard_stats_report_totals(pool: PgPool) {
         .await
         .expect("profile insert should work");
 
-    let Json(stats) = dashboard::get_stats(State(pool.clone()))
+    let response = app
+        .clone()
+        .oneshot(
+            Request::get("/api/dashboard/stats")
+                .body(Body::empty())
+                .expect("request should build"),
+        )
         .await
-        .expect("stats should be returned");
+        .expect("stats response should be returned");
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response
+        .into_body()
+        .collect()
+        .await
+        .expect("stats body should read")
+        .to_bytes();
+    let stats: DashboardStats = serde_json::from_slice(&body).expect("stats should deserialize");
 
     assert_eq!(stats.total_users, 1);
     assert_eq!(stats.total_licenses, 1);

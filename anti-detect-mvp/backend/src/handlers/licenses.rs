@@ -82,11 +82,12 @@ pub async fn create_license(
 
 pub async fn activate_license(
     State(pool): State<PgPool>,
+    Path(license_key): Path<String>,
     Json(req): Json<ActivateLicenseRequest>,
 ) -> Result<Json<License>, (StatusCode, String)> {
     // Check if license exists and is valid
     let license = sqlx::query_as::<_, License>("SELECT * FROM licenses WHERE license_key = $1")
-        .bind(&req.key)
+        .bind(&license_key)
         .fetch_optional(&pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
@@ -117,7 +118,7 @@ pub async fn activate_license(
     )
     .bind(&hardware_id)
     .bind(chrono::Local::now().naive_local())
-    .bind(&req.key)
+    .bind(&license_key)
     .fetch_one(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
