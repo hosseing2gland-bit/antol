@@ -75,11 +75,11 @@ pub async fn update_user(
     let mut updates = Vec::new();
     let mut param_count = 1;
 
-    if let Some(email) = &req.email {
+    if let Some(_email) = &req.email {
         updates.push(format!("email = ${}", param_count));
         param_count += 1;
     }
-    if let Some(role) = &req.role {
+    if let Some(_role) = &req.role {
         updates.push(format!("role = ${}", param_count));
         param_count += 1;
     }
