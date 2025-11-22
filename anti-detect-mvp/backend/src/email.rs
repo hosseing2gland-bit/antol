@@ -70,6 +70,7 @@ impl EmailService {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn send_license_activated(&self, to: &str, license_key: &str, expires_at: &str) -> Result<(), Box<dyn std::error::Error>> {
         let email = Message::builder()
             .from(self.from_email.parse()?)
@@ -107,6 +108,7 @@ impl EmailService {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn send_license_expiring_soon(&self, to: &str, license_key: &str, days_remaining: i32) -> Result<(), Box<dyn std::error::Error>> {
         let email = Message::builder()
             .from(self.from_email.parse()?)
@@ -141,6 +143,7 @@ impl EmailService {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn send_license_expired(&self, to: &str, license_key: &str) -> Result<(), Box<dyn std::error::Error>> {
         let email = Message::builder()
             .from(self.from_email.parse()?)
@@ -175,6 +178,7 @@ impl EmailService {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn send_password_reset(&self, to: &str, reset_token: &str) -> Result<(), Box<dyn std::error::Error>> {
         let reset_link = format!("http://localhost:8080/reset-password?token={}", reset_token);
         

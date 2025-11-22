@@ -82,19 +82,19 @@ pub async fn update_profile(
     let mut updates = Vec::new();
     let mut param_count = 1;
 
-    if let Some(name) = &req.name {
+    if req.name.is_some() {
         updates.push(format!("name = ${}", param_count));
         param_count += 1;
     }
-    if let Some(proxy_id) = &req.proxy_id {
+    if req.proxy_id.is_some() {
         updates.push(format!("proxy_id = ${}", param_count));
         param_count += 1;
     }
-    if let Some(fingerprint_config) = &req.fingerprint_config {
+    if req.fingerprint_config.is_some() {
         updates.push(format!("fingerprint_config = ${}", param_count));
         param_count += 1;
     }
-    if let Some(notes) = &req.notes {
+    if req.notes.is_some() {
         updates.push(format!("notes = ${}", param_count));
         param_count += 1;
     }
