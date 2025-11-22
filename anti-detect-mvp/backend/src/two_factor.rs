@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
-use totp_lite::{totp_custom, Sha1};
-use base64::{Engine as _, engine::general_purpose};
-use qrcode::QrCode;
+use base64::{engine::general_purpose, Engine as _};
 use qrcode::render::svg;
-use std::time::{SystemTime, UNIX_EPOCH};
+use qrcode::QrCode;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
+use totp_lite::{totp_custom, Sha1};
 
 const TOTP_DIGITS: u32 = 6;
 const TOTP_STEP: u64 = 30;
@@ -36,19 +36,18 @@ pub fn generate_backup_codes(count: usize) -> Vec<String> {
         .collect()
 }
 
-pub fn generate_qr_code(secret: &str, username: &str, issuer: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub fn generate_qr_code(
+    secret: &str,
+    username: &str,
+    issuer: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
     let otpauth_url = format!(
         "otpauth://totp/{}:{}?secret={}&issuer={}",
-        issuer,
-        username,
-        secret,
-        issuer
+        issuer, username, secret, issuer
     );
 
     let code = QrCode::new(otpauth_url.as_bytes())?;
-    let svg = code.render::<svg::Color>()
-        .min_dimensions(200, 200)
-        .build();
+    let svg = code.render::<svg::Color>().min_dimensions(200, 200).build();
 
     Ok(svg)
 }
@@ -70,13 +69,8 @@ pub fn verify_totp(secret: &str, token: &str) -> bool {
         if time < 0 {
             continue;
         }
-        
-        let expected = totp_custom::<Sha1>(
-            TOTP_STEP,
-            TOTP_DIGITS,
-            &secret_bytes,
-            time as u64,
-        );
+
+        let expected = totp_custom::<Sha1>(TOTP_STEP, TOTP_DIGITS, &secret_bytes, time as u64);
 
         if token == expected {
             return true;
@@ -122,14 +116,14 @@ mod tests {
     fn test_verify_totp() {
         let secret = generate_secret();
         let secret_bytes = general_purpose::STANDARD.decode(&secret).unwrap();
-        
+
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         let token = totp_custom::<Sha1>(TOTP_STEP, TOTP_DIGITS, &secret_bytes, timestamp);
-        
+
         assert!(verify_totp(&secret, &token));
         assert!(!verify_totp(&secret, "000000"));
     }
@@ -138,7 +132,7 @@ mod tests {
     fn test_setup_2fa() {
         let result = setup_2fa("test@example.com");
         assert!(result.is_ok());
-        
+
         let tfa = result.unwrap();
         assert!(!tfa.secret.is_empty());
         assert!(!tfa.qr_code.is_empty());
