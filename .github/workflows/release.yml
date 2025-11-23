@@ -117,8 +117,9 @@ jobs:
       - name: Install dependencies
         working-directory: anti-detect-mvp/${{ matrix.app }}
         run: |
+          rm -rf node_modules package-lock.json
           npm install
-          npm install @tauri-apps/cli-darwin-x64 --save-optional
+          npm install @tauri-apps/cli-darwin-x64 @rollup/rollup-darwin-x64 --save-optional
 
       - name: Build Tauri app
         working-directory: anti-detect-mvp/${{ matrix.app }}
@@ -161,8 +162,9 @@ jobs:
       - name: Install dependencies
         working-directory: anti-detect-mvp/${{ matrix.app }}
         run: |
+          rm -rf node_modules package-lock.json
           npm install
-          npm install @tauri-apps/cli-darwin-arm64 --save-optional
+          npm install @tauri-apps/cli-darwin-arm64 @rollup/rollup-darwin-arm64 --save-optional
 
       - name: Build Tauri app
         working-directory: anti-detect-mvp/${{ matrix.app }}

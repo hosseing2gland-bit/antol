@@ -111,8 +111,9 @@ jobs:
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
       run: |
+        rm -rf node_modules package-lock.json
         npm install
-        npm install @tauri-apps/cli-darwin-x64 --save-optional
+        npm install @tauri-apps/cli-darwin-x64 @rollup/rollup-darwin-x64 --save-optional
 
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -151,8 +152,9 @@ jobs:
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
       run: |
+        rm -rf node_modules package-lock.json
         npm install
-        npm install @tauri-apps/cli-darwin-arm64 --save-optional
+        npm install @tauri-apps/cli-darwin-arm64 @rollup/rollup-darwin-arm64 --save-optional
 
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -191,8 +193,9 @@ jobs:
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
       run: |
+        rm -rf node_modules package-lock.json
         npm install
-        npm install @tauri-apps/cli-darwin-x64 --save-optional
+        npm install @tauri-apps/cli-darwin-x64 @rollup/rollup-darwin-x64 --save-optional
 
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
@@ -231,8 +234,9 @@ jobs:
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
       run: |
+        rm -rf node_modules package-lock.json
         npm install
-        npm install @tauri-apps/cli-darwin-arm64 --save-optional
+        npm install @tauri-apps/cli-darwin-arm64 @rollup/rollup-darwin-arm64 --save-optional
 
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
