@@ -73,6 +73,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: anti-detect-mvp/${{ matrix.app }}
+        shell: bash
         run: npm ci || npm install
 
       - name: Build Tauri app
