@@ -1,0 +1,70 @@
+name: CI - Build & Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-services:
+    name: Rust services
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        crate: [backend, license-server]
+    defaults:
+      run:
+        working-directory: anti-detect-mvp/${{ matrix.crate }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles(format('anti-detect-mvp/{0}/Cargo.lock', matrix.crate)) }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: anti-detect-mvp/${{ matrix.crate }}/target
+          key: ${{ runner.os }}-${{ matrix.crate }}-cargo-target-${{ hashFiles(format('anti-detect-mvp/{0}/Cargo.lock', matrix.crate)) }}
+
+      - name: Run tests
+        run: cargo test --locked --all-targets
+
+  frontend-builds:
+    name: Frontend builds
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        app: [admin-app, client-app]
+    defaults:
+      run:
+        working-directory: anti-detect-mvp/${{ matrix.app }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: anti-detect-mvp/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
