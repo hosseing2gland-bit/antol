@@ -1,0 +1,331 @@
+name: macOS Builds
+
+# Dedicated workflow for building Tauri apps on macOS
+# Produces .app bundles and .dmg installers for both Intel and Apple Silicon
+
+on:
+  # Manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      build_client:
+        description: 'Build Client App'
+        type: boolean
+        default: true
+      build_admin:
+        description: 'Build Admin App'
+        type: boolean
+        default: true
+      architecture:
+        description: 'Target Architecture'
+        type: choice
+        options:
+          - 'both'
+          - 'intel'
+          - 'apple-silicon'
+        default: 'both'
+
+  # Trigger on version tags
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+  NODE_VERSION: '18'
+
+jobs:
+  # ============================================
+  # Client App - macOS Intel (x86_64)
+  # ============================================
+  build-client-macos-intel:
+    name: Client App - macOS Intel
+    runs-on: macos-13
+    if: ${{ github.event_name == 'push' || github.event.inputs.build_client == 'true' && (github.event.inputs.architecture == 'both' || github.event.inputs.architecture == 'intel') }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/client-app/package-lock.json
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-apple-darwin
+
+    - name: Cache Cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: macos-intel-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install npm dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install
+        npm install @tauri-apps/cli-darwin-x64 @rollup/rollup-darwin-x64 --save-optional
+
+    - name: Build Tauri app
+      working-directory: anti-detect-mvp/client-app
+      run: npm run tauri build -- --target x86_64-apple-darwin
+      env:
+        VITE_API_URL: http://localhost:3000
+        # ============================================
+        # CODE SIGNING (Uncomment when certificates are available)
+        # ============================================
+        # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+        # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        # APPLE_ID: ${{ secrets.APPLE_ID }}
+        # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+    - name: Upload DMG artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-macos-intel-dmg
+        path: anti-detect-mvp/client-app/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 14
+        if-no-files-found: warn
+
+    - name: Upload App Bundle artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-macos-intel-app
+        path: anti-detect-mvp/client-app/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app
+        retention-days: 14
+        if-no-files-found: warn
+
+  # ============================================
+  # Client App - macOS Apple Silicon (ARM64)
+  # ============================================
+  build-client-macos-silicon:
+    name: Client App - macOS Apple Silicon
+    runs-on: macos-14
+    if: ${{ github.event_name == 'push' || github.event.inputs.build_client == 'true' && (github.event.inputs.architecture == 'both' || github.event.inputs.architecture == 'apple-silicon') }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/client-app/package-lock.json
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-apple-darwin
+
+    - name: Cache Cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: macos-silicon-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install npm dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install
+        npm install @tauri-apps/cli-darwin-arm64 @rollup/rollup-darwin-arm64 --save-optional
+
+    - name: Build Tauri app
+      working-directory: anti-detect-mvp/client-app
+      run: npm run tauri build -- --target aarch64-apple-darwin
+      env:
+        VITE_API_URL: http://localhost:3000
+        # ============================================
+        # CODE SIGNING (Uncomment when certificates are available)
+        # ============================================
+        # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+        # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+
+    - name: Upload DMG artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-macos-silicon-dmg
+        path: anti-detect-mvp/client-app/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 14
+        if-no-files-found: warn
+
+    - name: Upload App Bundle artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-macos-silicon-app
+        path: anti-detect-mvp/client-app/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+        retention-days: 14
+        if-no-files-found: warn
+
+  # ============================================
+  # Admin App - macOS Intel (x86_64)
+  # ============================================
+  build-admin-macos-intel:
+    name: Admin App - macOS Intel
+    runs-on: macos-13
+    if: ${{ github.event_name == 'push' || github.event.inputs.build_admin == 'true' && (github.event.inputs.architecture == 'both' || github.event.inputs.architecture == 'intel') }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-apple-darwin
+
+    - name: Cache Cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: macos-intel-cargo-admin-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install npm dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install
+        npm install @tauri-apps/cli-darwin-x64 @rollup/rollup-darwin-x64 --save-optional
+
+    - name: Build Tauri app
+      working-directory: anti-detect-mvp/admin-app
+      run: npm run tauri build -- --target x86_64-apple-darwin
+      env:
+        VITE_API_URL: http://localhost:3000
+
+    - name: Upload DMG artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-macos-intel-dmg
+        path: anti-detect-mvp/admin-app/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 14
+        if-no-files-found: warn
+
+    - name: Upload App Bundle artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-macos-intel-app
+        path: anti-detect-mvp/admin-app/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app
+        retention-days: 14
+        if-no-files-found: warn
+
+  # ============================================
+  # Admin App - macOS Apple Silicon (ARM64)
+  # ============================================
+  build-admin-macos-silicon:
+    name: Admin App - macOS Apple Silicon
+    runs-on: macos-14
+    if: ${{ github.event_name == 'push' || github.event.inputs.build_admin == 'true' && (github.event.inputs.architecture == 'both' || github.event.inputs.architecture == 'apple-silicon') }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-apple-darwin
+
+    - name: Cache Cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: macos-silicon-cargo-admin-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install npm dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install
+        npm install @tauri-apps/cli-darwin-arm64 @rollup/rollup-darwin-arm64 --save-optional
+
+    - name: Build Tauri app
+      working-directory: anti-detect-mvp/admin-app
+      run: npm run tauri build -- --target aarch64-apple-darwin
+      env:
+        VITE_API_URL: http://localhost:3000
+
+    - name: Upload DMG artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-macos-silicon-dmg
+        path: anti-detect-mvp/admin-app/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+        retention-days: 14
+        if-no-files-found: warn
+
+    - name: Upload App Bundle artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-macos-silicon-app
+        path: anti-detect-mvp/admin-app/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+        retention-days: 14
+        if-no-files-found: warn
+
+  # ============================================
+  # Build Summary
+  # ============================================
+  macos-build-summary:
+    name: macOS Build Summary
+    needs:
+      - build-client-macos-intel
+      - build-client-macos-silicon
+      - build-admin-macos-intel
+      - build-admin-macos-silicon
+    runs-on: ubuntu-22.04
+    if: always()
+
+    steps:
+    - name: Summary
+      run: |
+        echo "================================================"
+        echo "macOS Build Summary"
+        echo "================================================"
+        echo ""
+        echo "Client App (Intel):         ${{ needs.build-client-macos-intel.result }}"
+        echo "Client App (Apple Silicon): ${{ needs.build-client-macos-silicon.result }}"
+        echo "Admin App (Intel):          ${{ needs.build-admin-macos-intel.result }}"
+        echo "Admin App (Apple Silicon):  ${{ needs.build-admin-macos-silicon.result }}"
+        echo ""
+        echo "================================================"
+        echo "Download artifacts from the Actions tab"
+        echo "================================================"

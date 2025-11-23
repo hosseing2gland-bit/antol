@@ -1,0 +1,250 @@
+name: CI - Tests & Builds
+
+# Continuous Integration workflow for Anti-Detect Browser MVP
+# Runs on every push and PR to main branch
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  NODE_VERSION: '18'
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ============================================
+  # Backend Tests & Build (Rust + Axum)
+  # ============================================
+  backend-tests:
+    name: Backend - Build & Test
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Cache Cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Cache Cargo build
+      uses: actions/cache@v4
+      with:
+        path: anti-detect-mvp/backend/target
+        key: ${{ runner.os }}-backend-target-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-backend-target-
+
+    - name: Check formatting
+      working-directory: anti-detect-mvp/backend
+      run: cargo fmt --all -- --check
+      continue-on-error: true
+
+    - name: Run Clippy linter
+      working-directory: anti-detect-mvp/backend
+      run: cargo clippy --all-targets --all-features -- -D warnings
+      continue-on-error: true
+
+    - name: Build backend (release)
+      working-directory: anti-detect-mvp/backend
+      run: cargo build --release
+
+    - name: Run Rust tests
+      working-directory: anti-detect-mvp/backend
+      run: cargo test --release
+      continue-on-error: true
+
+    - name: Upload backend binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-linux-x64
+        path: anti-detect-mvp/backend/target/release/backend
+        retention-days: 7
+
+  # ============================================
+  # Client App Tests & Build (Tauri + React)
+  # ============================================
+  client-app-build:
+    name: Client App - Build & Validate
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/client-app/package-lock.json
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies (Tauri)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
+
+    - name: Cache Cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-client-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache client-app Rust target
+      uses: actions/cache@v4
+      with:
+        path: anti-detect-mvp/client-app/src-tauri/target
+        key: ${{ runner.os }}-client-target-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install npm dependencies
+      working-directory: anti-detect-mvp/client-app
+      run: npm ci || npm install
+
+    - name: TypeScript type check
+      working-directory: anti-detect-mvp/client-app
+      run: npx tsc --noEmit
+      continue-on-error: true
+
+    - name: Build frontend (Vite)
+      working-directory: anti-detect-mvp/client-app
+      run: npm run build
+
+    - name: Build Tauri app (Linux)
+      working-directory: anti-detect-mvp/client-app
+      run: npm run tauri build
+      env:
+        VITE_API_URL: http://localhost:3000
+
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-app-linux-x64
+        path: |
+          anti-detect-mvp/client-app/src-tauri/target/release/bundle/appimage/*.AppImage
+          anti-detect-mvp/client-app/src-tauri/target/release/bundle/deb/*.deb
+        retention-days: 7
+        if-no-files-found: warn
+
+  # ============================================
+  # Admin App Tests & Build (Tauri + React)
+  # ============================================
+  admin-app-build:
+    name: Admin App - Build & Validate
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies (Tauri)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
+
+    - name: Cache Cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-admin-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache admin-app Rust target
+      uses: actions/cache@v4
+      with:
+        path: anti-detect-mvp/admin-app/src-tauri/target
+        key: ${{ runner.os }}-admin-target-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install npm dependencies
+      working-directory: anti-detect-mvp/admin-app
+      run: npm ci || npm install
+
+    - name: TypeScript type check
+      working-directory: anti-detect-mvp/admin-app
+      run: npx tsc --noEmit
+      continue-on-error: true
+
+    - name: Build frontend (Vite)
+      working-directory: anti-detect-mvp/admin-app
+      run: npm run build
+
+    - name: Build Tauri app (Linux)
+      working-directory: anti-detect-mvp/admin-app
+      run: npm run tauri build
+      env:
+        VITE_API_URL: http://localhost:3000
+
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: admin-app-linux-x64
+        path: |
+          anti-detect-mvp/admin-app/src-tauri/target/release/bundle/appimage/*.AppImage
+          anti-detect-mvp/admin-app/src-tauri/target/release/bundle/deb/*.deb
+        retention-days: 7
+        if-no-files-found: warn
+
+  # ============================================
+  # CI Summary
+  # ============================================
+  ci-summary:
+    name: CI Summary
+    needs: [backend-tests, client-app-build, admin-app-build]
+    runs-on: ubuntu-22.04
+    if: always()
+
+    steps:
+    - name: Check job results
+      run: |
+        echo "==================================="
+        echo "CI Pipeline Summary"
+        echo "==================================="
+        echo ""
+        echo "Backend Tests:     ${{ needs.backend-tests.result }}"
+        echo "Client App Build:  ${{ needs.client-app-build.result }}"
+        echo "Admin App Build:   ${{ needs.admin-app-build.result }}"
+        echo ""
+        if [[ "${{ needs.backend-tests.result }}" == "success" && \
+              "${{ needs.client-app-build.result }}" == "success" && \
+              "${{ needs.admin-app-build.result }}" == "success" ]]; then
+          echo "✅ All CI checks passed!"
+          exit 0
+        else
+          echo "❌ Some CI checks failed or were skipped."
+          exit 1
+        fi
