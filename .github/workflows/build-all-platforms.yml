@@ -110,7 +110,9 @@ jobs:
     
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm ci || npm install
+      run: |
+        npm install
+        npm install @tauri-apps/cli-darwin-x64 --save-optional
 
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -148,7 +150,9 @@ jobs:
 
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
-      run: npm ci || npm install
+      run: |
+        npm install
+        npm install @tauri-apps/cli-darwin-arm64 --save-optional
 
     - name: Build Admin App
       working-directory: anti-detect-mvp/admin-app
@@ -186,7 +190,9 @@ jobs:
 
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm ci || npm install
+      run: |
+        npm install
+        npm install @tauri-apps/cli-darwin-x64 --save-optional
 
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
@@ -224,7 +230,9 @@ jobs:
 
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
-      run: npm ci || npm install
+      run: |
+        npm install
+        npm install @tauri-apps/cli-darwin-arm64 --save-optional
 
     - name: Build Client App
       working-directory: anti-detect-mvp/client-app
