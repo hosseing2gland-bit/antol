@@ -14,24 +14,25 @@ jobs:
   # Build Windows Admin App
   build-windows-admin:
     runs-on: windows-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
         cache-dependency-path: anti-detect-mvp/admin-app/package-lock.json
-    
+
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: x86_64-pc-windows-msvc
-    
+
     - name: Install dependencies
       working-directory: anti-detect-mvp/admin-app
+      shell: bash
       run: npm ci || npm install
 
     - name: Build Admin App
@@ -70,6 +71,7 @@ jobs:
 
     - name: Install dependencies
       working-directory: anti-detect-mvp/client-app
+      shell: bash
       run: npm ci || npm install
 
     - name: Build Client App
