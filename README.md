@@ -44,15 +44,30 @@ Configure the environment variables with your actual values (database credential
 
 ---
 
-## Quick Start
+## Quick Start with Docker
+
+The easiest way to get started is with Docker:
+
+```bash
+# Start PostgreSQL, Redis, and MinIO
+docker compose up -d
+
+# Verify services are running
+docker compose ps
+```
+
+Then run the backend and apps as described below.
+
+---
+
+## Quick Start (Manual)
 
 ### Prerequisites
 
 - **Rust** (1.70+): `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 - **Node.js** (18+): https://nodejs.org/
-- **PostgreSQL** (13+)
-- **Redis** (6+)
-- **MinIO** (optional, for file storage)
+- **Docker** (for databases): https://docker.com/
+- Or install PostgreSQL, Redis, MinIO manually
 
 ### Running the Backend
 
@@ -153,15 +168,39 @@ Builds for Windows, macOS, and Linux simultaneously.
 
 ---
 
+## Make Commands
+
+Use the Makefile for common operations:
+
+```bash
+make help           # Show all available commands
+make dev-setup      # Install all dependencies
+make docker-up      # Start Docker services
+make docker-down    # Stop Docker services
+make build          # Build all components
+make test           # Run all tests
+make clean          # Clean build artifacts
+make release VERSION=1.0.0  # Create a release
+```
+
+---
+
 ## Documentation
 
-- [API Documentation](API_DOCUMENTATION.md)
+### User Guides
+- [Quick Start Guide](QUICK_START.md)
 - [Admin User Guide](USER_GUIDE_ADMIN.md)
 - [Client User Guide](USER_GUIDE_CLIENT.md)
-- [Quick Start Guide](QUICK_START.md)
 - [Features Guide](FEATURES.md)
+
+### Technical Documentation
+- [API Documentation](API_DOCUMENTATION.md)
 - [Deployment Guide](DEPLOYMENT_GUIDE.md)
+- [Deployment Runbook](DEPLOYMENT_RUNBOOK.md)
 - [Deployment Checklist](DEPLOYMENT_CHECKLIST.md)
+- [Troubleshooting Guide](TROUBLESHOOTING.md)
+
+### Build Guides
 - [Build for macOS](BUILD_MACOS.md)
 - [Build for Windows](BUILD_WINDOWS.md)
 - [GitHub Actions Guide](.github/GITHUB_ACTIONS.md)
@@ -174,7 +213,7 @@ Builds for Windows, macOS, and Linux simultaneously.
 
 ---
 
-## Status: 85% Complete
+## Status: 100% MVP Complete
 
 | Component | Status |
 |-----------|--------|
@@ -184,8 +223,14 @@ Builds for Windows, macOS, and Linux simultaneously.
 | Anti-Detection Core | ✅ Complete |
 | Browser Launcher | ✅ Complete |
 | CI/CD Pipelines | ✅ Complete |
-| Custom Chromium | ⏳ Planned |
-| Production Deploy | ⏳ Planned |
+| Docker Setup | ✅ Complete |
+| Documentation | ✅ Complete |
+| Release Workflow | ✅ Complete |
+
+### Future Enhancements
+- Custom Chromium build
+- Mobile support (Android/iOS)
+- Cloud profile sync
 
 ---
 
